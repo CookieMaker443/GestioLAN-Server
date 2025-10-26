@@ -1,2 +1,3 @@
-﻿venw/
-
+﻿# .gitignore
+venv/
+__pycache__/

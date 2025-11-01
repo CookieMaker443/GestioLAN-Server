@@ -102,44 +102,76 @@ def get_oggetti():
     if db is None:
         return jsonify({'error': 'Database connection failed'}), 500
 
-    dati = request.args()
+    WHERE_ADDED = False
+
+    dati = request.args
     filtro = dati.get('filtro_id')
+    nome = dati.get('nome')
+    categoria = dati.get('categoria')
+    quantità = dati.get('quantita')
+
+    response = None
 
     if filtro is None:
-        return jsonify({'error': 'filtro_id parameter is required'}), 400
-    elif filtro == 1:
-        ricerca_nome(db, dati)
-        pass
-    elif filtro == 2:
-        ricerca_quantita()
-        pass
-    elif filtro == 3:
-        ricerca_quantita()
-        pass
+        try:
+            cursor = db.cursor(dictionary=True)
+            query = "SELECT * FROM Oggetti"
+            cursor.execute(query)
+            oggetti = cursor.fetchall()
+            response = jsonify(oggetti), 200
+        except mysql.connector.Error as err:
+            print(f"Error: {err}")
+            response = jsonify({'error': 'Failed to retrieve Oggetti senza filtro'}), 500
+        finally:
+            if db.is_connected():
+                db.close()
 
-# filtro id = 1
-def ricerca_nome(db, dati):
-    nome = dati.get('nome')
-    try: 
-        cursor = db.cursor()
-        query = "SELECT * FROM Oggetti WHERE nome = %s"
-        cursor.execute(query, (nome,))
-        risultati = cursor.fetchall()
-        return jsonify(risultati), 200
-    except mysql.connector.Error as err:
-        print(f"Error: {err}")
-        return jsonify({'error': 'Failed to retrieve Oggetti'}), 500
-    finally:
-        if db.is_connected():
-            db.close()
+    else:
+        try:
+            cursor = db.cursor(dictionary=True)
+            query = "SELECT * FROM Oggetti"
 
-# filtro id = 2
-def ricerca_quantita():
-    pass
+            if nome is not None:        # filtro per nome
+                aggregatore = ""
+                if WHERE_ADDED is False:
+                    aggregatore = " WHERE"
+                    WHERE_ADDED = True
+                else:
+                    aggregatore = " AND"
+                
+                query += f"{aggregatore} nome LIKE '%{nome}%'"
 
-# filtro id = 3
-def ricerca_categoria():
-    pass
+            if categoria is not None:   # filtro per categoria
+                aggregatore = ""
+                if WHERE_ADDED is False:
+                    aggregatore = " WHERE"
+                    WHERE_ADDED = True
+                else:
+                    aggregatore = " AND"
+                
+                query += f"{aggregatore} id_categoria = {categoria}"
+
+            if quantità is not None:    # filtro per quantità
+                aggregatore = ""
+                if WHERE_ADDED is False:
+                    aggregatore = " WHERE"
+                    WHERE_ADDED = True
+                else:
+                    aggregatore = " AND"
+                
+                query += f"{aggregatore} quantita = {quantità}"
+
+            cursor.execute(query, (filtro,))
+            oggetti = cursor.fetchall()
+            response = jsonify(oggetti), 200
+        except mysql.connector.Error as err:
+            print(f"Error: {err}")
+            response = jsonify({'error': 'Failed to retrieve Oggetti con filtro'}, query), 500
+        finally:
+            if db.is_connected():
+                db.close()
+    return response
+
 
 if __name__ == '__main__':
     #La tua API sarà in ascolto su http://127.0.0.1:5000

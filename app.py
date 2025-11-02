@@ -18,33 +18,6 @@ def get_db_connection():
         print(f"Error: {err}")
         return None
     
-@app.route('/oggetti', methods=['GET'])
-def get_oggetti():
-    db = get_db_connection()
-    if db is None:
-        return jsonify({'error': 'Database connection failed'}), 500
-    
-    try:
-        cursor = db.cursor(dictionary=True)
-        query = "SELECT * FROM Oggetti"
-
-        #query="""
-        #    SELECT o.id_oggetto, o.nome, o.quantita, o.descrizione, o.percorso_immagine, 
-        #           c.nome_categoria 
-        #    FROM Oggetti o
-        #    JOIN Categorie c ON o.id_categoria = c.id_categoria
-        #"""
-
-        cursor.execute(query)
-        oggetti = cursor.fetchall()
-        return jsonify(oggetti), 200
-    except mysql.connector.Error as err:
-        print(f"Error: {err}")
-        return jsonify({'error': 'Query execution failed'}), 500
-    finally:
-        if db.is_connected():
-            db.close()
-
 @app.route('/oggetti', methods=['POST'])
 def add_oggetto():
     db = get_db_connection()
@@ -123,8 +96,67 @@ def delete_oggetto(id_item):
         if db.is_connected():
             db.close()
 
+@app.route('/oggetti', methods=['GET'])
+def get_oggetti():
+    db = get_db_connection()
+    if db is None:
+        return jsonify({'error': 'Database connection failed'}), 500
 
+    # Liste per costruire la clausola WHERE in modo sicuro
+    where_clauses = []
+    params = []
+    
+    # Non usiamo più filtro_id, usiamo i filtri direttamente
+    dati = request.args
+    nome = dati.get('nome')
+    categoria_id = dati.get('categoria_id') # Rinominato per chiarezza con l'ID
+    quantita = dati.get('quantita')
 
+    try:
+        # 1. COSTRUZIONE DEI FILTRI (SOLO SE SONO PRESENTI)
+        
+        if nome:        # filtro per nome (ricerca parziale LIKE)
+            where_clauses.append("nome LIKE %s")
+            params.append(f"%{nome}%") # Il valore con i wildcard
+
+        if categoria_id:   # filtro per categoria (match esatto)
+            where_clauses.append("id_categoria = %s")
+            params.append(categoria_id) # Il valore del filtro
+
+        if quantita:    # filtro per quantità (match esatto)
+            where_clauses.append("quantita < %s")
+            params.append(quantita) # Il valore del filtro
+
+        # 2. ASSEMBLAGGIO DELLA QUERY
+        query_base = "SELECT * FROM Oggetti"
+        
+        query_finale = query_base
+        
+        if where_clauses:
+            # Unisce i frammenti SQL con " AND " e aggiunge WHERE
+            query_finale += " WHERE " + " AND ".join(where_clauses)
+        
+        # 3. ESECUZIONE DELLA QUERY (SICURA)
+        cursor = db.cursor(dictionary=True)
+        
+        # Passiamo la query che ora usa %s e la tupla dei parametri
+        cursor.execute(query_finale, tuple(params))
+        
+        oggetti = cursor.fetchall()
+        
+        cursor.close()
+        return jsonify(oggetti), 200
+        
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        # Restituisci anche la query_finale per debugging
+        return jsonify({'error': 'Failed to retrieve Oggetti', 'query_attempted': query_finale}), 500
+    except Exception as e:
+        print(f"General Error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+    finally:
+        if db.is_connected():
+            db.close()
 
 
 if __name__ == '__main__':

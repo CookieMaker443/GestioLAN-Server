@@ -109,7 +109,7 @@ def get_oggetti():
     # Non usiamo più filtro_id, usiamo i filtri direttamente
     dati = request.args
     nome = dati.get('nome')
-    categoria_id = dati.get('categoria_id') # Rinominato per chiarezza con l'ID
+    categoria_ids = dati.getlist('categoria_id') # Rinominato per chiarezza con l'ID
     quantita = dati.get('quantita')
 
     try:
@@ -119,9 +119,10 @@ def get_oggetti():
             where_clauses.append("nome LIKE %s")
             params.append(f"%{nome}%") # Il valore con i wildcard
 
-        if categoria_id:   # filtro per categoria (match esatto)
-            where_clauses.append("id_categoria = %s")
-            params.append(categoria_id) # Il valore del filtro
+        if categoria_ids:   # filtro per categoria (match esatto)
+            placeholder = ', '.join(['%s'] * len(categoria_ids))
+            where_clauses.append("id_categoria IN %s")
+            params.append(categoria_ids) # Il valore del filtro
 
         if quantita:    # filtro per quantità (match esatto)
             where_clauses.append("quantita < %s")

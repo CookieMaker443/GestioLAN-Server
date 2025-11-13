@@ -1,3 +1,13 @@
 ﻿# .gitignore
 venv/
 __pycache__/
+
+src/charpAPI/Properties
+src/charpAPI/obj
+src/charpAPI/bin
+*.user
+*.suo
+*.log
+*.tmp
+*.bak
+*.swp

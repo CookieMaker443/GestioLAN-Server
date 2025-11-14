@@ -1,3 +1,31 @@
 ﻿# .gitignore
 venv/
 __pycache__/
+
+# File di debug e compilazione
+*.pdb
+*.props
+*.suo
+
+# Directory della cache di compilazione
+.vs/
+.cache/
+**/bin/
+**/obj/
+
+src/charpAPI/Properties
+src/charpAPI/obj
+src/charpAPI/bin
+*.user
+*.suo
+*.log
+*.tmp
+*.bak
+*.swp
+*.dll
+*.exe
+
+appsettings.Development.json
+appsettings.Staging.json
+appsettings.Production.json
+appsettings.Local.json

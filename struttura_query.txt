@@ -1,7 +1,0 @@
-FILTRI
-
-filtro_id
-
-1 = ricerca nome
-2 = ricerca quantità
-3 = ricerca categorie

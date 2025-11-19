@@ -29,3 +29,8 @@ appsettings.Development.json
 appsettings.Staging.json
 appsettings.Production.json
 appsettings.Local.json
+
+# LLM e documenti di output
+GEMINI.md
+LLM_output/
+opencodetmp/

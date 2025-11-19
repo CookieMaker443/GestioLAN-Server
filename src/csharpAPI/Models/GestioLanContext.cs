@@ -61,7 +61,7 @@ public partial class GestioLanContext : DbContext
             entity.Property(e => e.Image)
                 .HasMaxLength(255)
                 .HasColumnName("image");
-            entity.Property(e => e.NameCategory)
+            entity.Property(e => e.ItemName)
                 .HasMaxLength(255)
                 .HasColumnName("name_category");
             entity.Property(e => e.Quantity).HasColumnName("quantity");

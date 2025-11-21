@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using csharpAPI.Models;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +13,7 @@ var connectionString = builder.Configuration.GetConnectionString("GestioLANConne
 
 builder.Services.AddDbContext<GestioLanContext>(options =>
     options.UseMySql(connectionString,
-        ServerVersion.AutoDetect(connectionString)));
+        new MariaDbServerVersion(new Version(10, 11, 13))));
 
 var app = builder.Build();
 
@@ -28,5 +29,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+Console.WriteLine("C# API is running...");
+Console.WriteLine($"Using connection string: {connectionString}");
 
 app.Run();

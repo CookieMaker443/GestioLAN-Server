@@ -23,7 +23,8 @@ public partial class GestioLanContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseMySql("GestioLANConnection", Microsoft.EntityFrameworkCore.ServerVersion.Parse("9.3.0-mysql"));
+        => optionsBuilder.UseMySql("Server=localhost;Port=3306;Database=GestioLAN;Uid=gestiolan_user;Pwd=LanPassword;", new MySqlServerVersion(new Version(11, 6, 0)));
+                                                        //Microsoft.EntityFrameworkCore.ServerVersion.Parse("9.3.0-mysql")
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

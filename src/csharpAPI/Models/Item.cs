@@ -9,8 +9,6 @@ public partial class Item
 
     public string ItemName { get; set; } = null!;
 
-    //public string NameCategory { get; set; } = null!;
-
     public string? Description { get; set; }
 
     public string? Image { get; set; }

@@ -33,7 +33,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `GestioLAN`.`items` (
   `id_item` INT NOT NULL AUTO_INCREMENT,
-  `name_category` VARCHAR(255) NOT NULL,
+  `ItemName` VARCHAR(255) NOT NULL,
   `description` VARCHAR(255) NULL,
   `image` VARCHAR(255) NULL,
   `id_category` INT NULL,

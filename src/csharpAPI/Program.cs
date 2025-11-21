@@ -11,6 +11,7 @@ builder.Services.AddControllers();
 
 var connectionString = builder.Configuration.GetConnectionString("GestioLANConnection");
 
+
 builder.Services.AddDbContext<GestioLanContext>(options =>
     options.UseMySql(connectionString,
         new MariaDbServerVersion(new Version(10, 11, 13))));
@@ -32,5 +33,6 @@ app.MapControllers();
 
 Console.WriteLine("C# API is running...");
 Console.WriteLine($"Using connection string: {connectionString}");
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
 
 app.Run();

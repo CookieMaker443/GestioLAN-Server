@@ -10,7 +10,7 @@ public class UsersController : ControllerBase
 {
     private readonly GestioLanContext _context;
 
-    public UserController(GestioLanContext context)
+    public UsersController(GestioLanContext context)
     {
         _context = context;
     }
@@ -27,6 +27,7 @@ public class UsersController : ControllerBase
         {
             query = query.Where(user => user.Username == username && user.Password == password);
             // return corretto, utente loggato
+            return await query.ToListAsync();
         }
         
         // utente inesistente, login fallito

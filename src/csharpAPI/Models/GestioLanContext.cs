@@ -23,9 +23,13 @@ public partial class GestioLanContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseMySql("Server=localhost;Port=3306;Database=GestioLAN;Uid=gestiolan_user;Pwd=LanPassword;", new MySqlServerVersion(new Version(11, 6, 0)));
-                                                        //Microsoft.EntityFrameworkCore.ServerVersion.Parse("9.3.0-mysql")
-
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            Console.WriteLine("Warning: Using hardcoded connection string. Consider moving it to configuration.");
+        }
+    }
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
@@ -64,7 +68,7 @@ public partial class GestioLanContext : DbContext
                 .HasColumnName("image");
             entity.Property(e => e.ItemName)
                 .HasMaxLength(255)
-                .HasColumnName("name_category");
+                .HasColumnName("item_name");
             entity.Property(e => e.Quantity).HasColumnName("quantity");
             entity.Property(e => e.TypeQuantity)
                 .HasMaxLength(45)

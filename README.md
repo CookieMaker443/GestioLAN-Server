@@ -12,13 +12,16 @@ e manda (tramite bot telegram per esempio) dei messaggi con delle informazioni
 
 # Info Utile! #
 
-"GestioLANConnection": "Server=IP_ADDRESS;Database=GestioLAN;User Id=YOUR_USER;Password=YOUR_PASSWORD;TrustServerCertificate=True;
+"GestioLANConnection": "Server=IP_ADDRESS;Port=3306;Database=GestioLAN;Uid=YOUR_USER;Pwd=YOUR_PASSWORD;
 
 questo riga in appsettings.json deve essere modificato!
 
 Server      : è l'ip della macchina che fa girare il server MySQL (localhost se nella stessa macchina)
 Database    : Nome del database
-User Id     : Utente di MySQL
-Password    : Password di MySQL
+User Id     : Utente di MySQL / mariadb
+Password    : Password di MySQL / mariadb
 
 meglio usare un UserSecret
+
+# Versione #
+Mariadb 11.6.0

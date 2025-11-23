@@ -17,16 +17,17 @@ public class ItemsController : ControllerBase
     // Ottiene tutti gli oggetti del DB
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Item>>> GetItems(
-        [FromQuery] int? id_category,
+        [FromQuery] int[] ids_category,
         [FromQuery] string? name,
         [FromQuery] int? quantity,
         [FromQuery] string? type_quantity
         ){
         IQueryable<Item> query = _context.Items;
 
-        if(id_category.HasValue){
-            query = query.Where(item => item.IdCategory == id_category.Value);
+        if(ids_category.Any()){
+            query = query.Where(item => ids_category.Contains(item.IdCategory.Value));
         }
+        
 
         if(!string.IsNullOrEmpty(name)){
             query = query.Where(item => item.ItemName.Contains(name));
@@ -72,4 +73,48 @@ public class ItemsController : ControllerBase
 
         return CreatedAtAction(nameof(GetItems), new { id = newItem.IdItem }, newItem);
     }
+
+    
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult<IEnumerable<Item>>> DeleteItem(int id)
+    {
+        var item = await _context.Items.FindAsync(id);
+        if (item == null)
+        {
+            return NotFound();
+        }
+
+        _context.Items.Remove(item);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    
+    [HttpPut("{id}")]
+    public async Task<IActionResult> PutItem(
+        int id, string name, string description, string image, 
+        int id_category, int quantity, string type_quantity, Item updatedItem)
+    {
+        if (id != updatedItem.IdItem)
+        {
+            return BadRequest("Id mismatch");
+        }
+
+        updatedItem.ItemName = name;
+        updatedItem.Description = description;
+        updatedItem.Image = image;
+        updatedItem.IdCategory = id_category;
+        updatedItem.Quantity = quantity;
+        updatedItem.TypeQuantity = type_quantity;
+
+        _context.Entry(updatedItem).State = EntityState.Modified;
+
+        await _context.SaveChangesAsync();
+        
+        return NoContent();
+    }
+
+    
 }

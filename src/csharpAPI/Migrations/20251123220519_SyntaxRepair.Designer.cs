@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using csharpAPI.Models;
 
@@ -11,9 +12,11 @@ using csharpAPI.Models;
 namespace csharpAPI.Migrations
 {
     [DbContext(typeof(GestioLanContext))]
-    partial class GestioLanContextModelSnapshot : ModelSnapshot
+    [Migration("20251123220519_SyntaxRepair")]
+    partial class SyntaxRepair
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -64,14 +67,14 @@ namespace csharpAPI.Migrations
                         .HasColumnName("id_category");
 
                     b.Property<string>("Image")
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
                         .HasColumnName("image");
 
                     b.Property<string>("ItemName")
                         .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
                         .HasColumnName("item_name");
 
                     b.Property<int>("Quantity")
@@ -91,11 +94,6 @@ namespace csharpAPI.Migrations
 
             modelBuilder.Entity("csharpAPI.Models.User", b =>
                 {
-                    b.Property<string>("Username")
-                        .HasMaxLength(32)
-                        .HasColumnType("varchar(32)")
-                        .HasColumnName("username");
-
                     b.Property<DateTime?>("CreateTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp")
@@ -113,7 +111,11 @@ namespace csharpAPI.Migrations
                         .HasColumnType("varchar(32)")
                         .HasColumnName("password");
 
-                    b.HasKey("Username");
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("varchar(16)")
+                        .HasColumnName("username");
 
                     b.ToTable("user", (string)null);
                 });

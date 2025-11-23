@@ -64,10 +64,10 @@ public partial class GestioLanContext : DbContext
                 .HasColumnName("description");
             entity.Property(e => e.IdCategory).HasColumnName("id_category");
             entity.Property(e => e.Image)
-                .HasMaxLength(255)
+                .HasMaxLength(64)
                 .HasColumnName("image");
             entity.Property(e => e.ItemName)
-                .HasMaxLength(32)
+                .HasMaxLength(64)
                 .HasColumnName("item_name");
             entity.Property(e => e.Quantity).HasColumnName("quantity");
             entity.Property(e => e.TypeQuantity)
@@ -77,8 +77,7 @@ public partial class GestioLanContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Username).HasName("PRIMARY");
-                
+            entity.HasKey(e => e.Username);
             entity.ToTable("user");
 
             entity.Property(e => e.CreateTime)
@@ -92,7 +91,7 @@ public partial class GestioLanContext : DbContext
                 .HasMaxLength(32)
                 .HasColumnName("password");
             entity.Property(e => e.Username)
-                .HasMaxLength(16)
+                .HasMaxLength(32)
                 .HasColumnName("username");
         });
 

@@ -67,7 +67,7 @@ public partial class GestioLanContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("image");
             entity.Property(e => e.ItemName)
-                .HasMaxLength(255)
+                .HasMaxLength(32)
                 .HasColumnName("item_name");
             entity.Property(e => e.Quantity).HasColumnName("quantity");
             entity.Property(e => e.TypeQuantity)
@@ -77,9 +77,9 @@ public partial class GestioLanContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("user");
+            entity.HasKey(e => e.Username).HasName("PRIMARY");
+                
+            entity.ToTable("user");
 
             entity.Property(e => e.CreateTime)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")

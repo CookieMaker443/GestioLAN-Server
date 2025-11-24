@@ -49,6 +49,9 @@ public class UsersController : ControllerBase
             return BadRequest("Username already exists");
         }
 
+        if(string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password)){
+            return BadRequest("Username and password are required");
+        }
         // aggiunge il nuovo utente
         User newUser = new User
         {

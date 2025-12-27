@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using csharpAPI.Models;
 
@@ -11,9 +12,11 @@ using csharpAPI.Models;
 namespace csharpAPI.Migrations
 {
     [DbContext(typeof(GestioLanContext))]
-    partial class GestioLanContextModelSnapshot : ModelSnapshot
+    [Migration("20251227021249_AumentoLunghezzaPass")]
+    partial class AumentoLunghezzaPass
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -88,7 +88,7 @@ public partial class GestioLanContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("email");
             entity.Property(e => e.Password)
-                .HasMaxLength(32)
+                .HasMaxLength(64)
                 .HasColumnName("password");
             entity.Property(e => e.Username)
                 .HasMaxLength(32)

@@ -60,11 +60,11 @@ public class UsersController : ControllerBase
 
         // Cerca l'utente nel database
         var user = await _context.Users
-            .Where(u => u.Username == loginUserdata.Username && u.Password == loginUserdata.Password)
+            .Where(u => u.Username == loginUserdata.Username)
             .FirstOrDefaultAsync();
 
-        // se l'utente non esiste, ritorna errore
-        if (user == null)
+        // se l'utente non esiste, o se la password non corrisponde, ritorna errore
+        if (user == null || !Hash.VerifyPassword(loginUserdata.Password, user.Password))
         {
             return Unauthorized("Invalid username or password."); 
         }
@@ -82,7 +82,7 @@ public class UsersController : ControllerBase
     // Crea un nuovo utente
     [HttpPost("Register")]
     public async Task<ActionResult<IEnumerable<User>>> PostUser(
-        string username, string password, string email
+        string username, string password, string? email
     ){
         // Controlla se l'username esiste già
         /*

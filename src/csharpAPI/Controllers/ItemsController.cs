@@ -41,6 +41,7 @@ public class ItemsController : ControllerBase
         return await query.ToListAsync();
     }
 
+    // Ottiene un singolo oggetto del DB tramite il suo ID    
     [HttpGet("{id}")] 
     public async Task<ActionResult<Item>> GetItem(int id)
     {
@@ -53,9 +54,10 @@ public class ItemsController : ControllerBase
         return item;
     }
 
+    // Crea un nuovo oggetto nel DB
     [HttpPost]
     public async Task<ActionResult<IEnumerable<Item>>> PostItem(
-        string name, string description, string image, int id_category, int quantity, string type_quantity)
+        string name, string? description, string? image, int id_category, int quantity, string type_quantity)
     {
 
         Item newItem = new Item

@@ -15,6 +15,10 @@
   <ItemGroup>
     <!-- libreria per fare hashing delle password -->
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+
+    <!-- libreria per generare il token JWT -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.22" />
+    
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.21" />
     
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.11">

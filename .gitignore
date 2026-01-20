@@ -34,5 +34,5 @@ appsettings.Local.json
 # LLM e documenti di output
 AGENTS.md
 GEMINI.md
-LLM_output/
+LLM/
 opencodetmp/

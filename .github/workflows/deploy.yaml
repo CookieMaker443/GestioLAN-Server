@@ -1,0 +1,31 @@
+name: Deploy containerized API
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Scarica il tuo codice nel runner
+      - name: Checkout del codice
+        uses: actions/checkout@v4 
+
+      # Scrivi sul terminale
+      - name: Esegui uno script
+        run: echo "Pushando il container"
+
+      # loggati su docker hub
+      - name: Login su Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      # Costruisci e push del container
+      - name: Build e Push con Versionamento
+        uses: docker/build-push-action@v5
+        with:
+          context: .src/csharpAPI # Cerca il Dockerfile nella root
+          push: true
+          # Qui gestiamo le versioni
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-api:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-api:v1.0.${{ github.run_number }}

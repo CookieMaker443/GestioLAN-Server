@@ -23,7 +23,8 @@ jobs:
       - name: Build e Push con Versionamento
         uses: docker/build-push-action@v5
         with:
-          context: .src/csharpAPI # Cerca il Dockerfile nella root
+          context: . # Cerca il Dockerfile partendo dalla root
+          file: src/csharpAPI/Dockerfile # Percorso relativo del Dockerfile
           push: true
           # Qui gestiamo le versioni
           tags: |

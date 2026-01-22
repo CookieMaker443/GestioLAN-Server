@@ -10,7 +10,8 @@ public class ItemsController : ControllerBase
 {
     private readonly GestioLanContext _context;
 
-    public ItemsController(GestioLanContext context){
+    public ItemsController(GestioLanContext context)
+    {
         _context = context;
     }
 
@@ -21,19 +22,23 @@ public class ItemsController : ControllerBase
         [FromQuery] string? name,
         [FromQuery] int? quantity,
         [FromQuery] string? type_quantity
-        ){
+        )
+    {
         IQueryable<Item> query = _context.Items;
 
-        if(ids_category.Any()){
+        if (ids_category.Any())
+        {
             query = query.Where(item => ids_category.Contains(item.IdCategory.Value));
         }
-        
 
-        if(!string.IsNullOrEmpty(name)){
+
+        if (!string.IsNullOrEmpty(name))
+        {
             query = query.Where(item => item.ItemName.Contains(name));
         }
 
-        if(quantity.HasValue && !string.IsNullOrEmpty(type_quantity)){
+        if (quantity.HasValue && !string.IsNullOrEmpty(type_quantity))
+        {
             query = query.Where(item => item.Quantity == quantity.Value)
                          .Where(item => item.TypeQuantity == type_quantity);
         }
@@ -42,7 +47,7 @@ public class ItemsController : ControllerBase
     }
 
     // Ottiene un singolo oggetto del DB tramite il suo ID    
-    [HttpGet("{id}")] 
+    [HttpGet("{id}")]
     public async Task<ActionResult<Item>> GetItem(int id)
     {
         var item = await _context.Items.FindAsync(id);
@@ -76,7 +81,7 @@ public class ItemsController : ControllerBase
         return CreatedAtAction(nameof(GetItems), new { id = newItem.IdItem }, newItem);
     }
 
-    
+
 
     [HttpDelete("{id}")]
     public async Task<ActionResult<IEnumerable<Item>>> DeleteItem(int id)
@@ -93,10 +98,10 @@ public class ItemsController : ControllerBase
         return NoContent();
     }
 
-    
+
     [HttpPut("{id}")]
     public async Task<IActionResult> PutItem(
-        int id, string name, string description, string image, 
+        int id, string name, string description, string image,
         int id_category, int quantity, string type_quantity, Item updatedItem)
     {
         if (id != updatedItem.IdItem)
@@ -114,9 +119,9 @@ public class ItemsController : ControllerBase
         _context.Entry(updatedItem).State = EntityState.Modified;
 
         await _context.SaveChangesAsync();
-        
+
         return NoContent();
     }
 
-    
+
 }

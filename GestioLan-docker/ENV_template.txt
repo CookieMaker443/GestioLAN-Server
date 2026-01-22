@@ -1,0 +1,7 @@
+DOCKER_USER=cookiemaker443
+IMAGE_NAME=gestiolan-api
+IMAGE_TAG=latest
+
+DB_NAME=GestioLan
+DB_USERNAME= YourDBNonRootUsername
+DB_PASSWORD= YourDBNonRootPassword

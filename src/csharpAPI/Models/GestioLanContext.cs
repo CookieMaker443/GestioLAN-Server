@@ -29,7 +29,7 @@ public partial class GestioLanContext : DbContext
             Console.WriteLine("Warning: Using hardcoded connection string. Consider moving it to configuration.");
         }
     }
-    
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder

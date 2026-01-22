@@ -15,5 +15,5 @@ public class CategoriesController : ControllerBase
         _context = context;
     }
 
-    
+
 }

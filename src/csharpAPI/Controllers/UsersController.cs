@@ -28,7 +28,8 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<IEnumerable<User>>> GetUsers(
         [FromQuery] string? username,
         [FromQuery] string? password
-    ){
+    )
+    {
         IQueryable<User> query = _context.Users;
 
         if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
@@ -37,7 +38,7 @@ public class UsersController : ControllerBase
             // return corretto, utente loggato
             return await query.ToListAsync();
         }
-        
+
         // utente inesistente, login fallito
         return BadRequest("Invalid username or password");
         //return await _context.Users.ToListAsync();
@@ -49,8 +50,9 @@ public class UsersController : ControllerBase
     // caso di successo riceve i dati dell'utente (senza password) e un token JWT
     [HttpPost("Login")]
     public async Task<ActionResult<IEnumerable<User>>> LoginUser(
-        User loginUserdata 
-    ){
+        User loginUserdata
+    )
+    {
 
         // Primo controllo sui dati ricevuti
         if (loginUserdata == null || string.IsNullOrEmpty(loginUserdata.Username) || string.IsNullOrEmpty(loginUserdata.Password))
@@ -66,16 +68,17 @@ public class UsersController : ControllerBase
         // se l'utente non esiste, o se la password non corrisponde, ritorna errore
         if (user == null || !Hash.VerifyPassword(loginUserdata.Password, user.Password))
         {
-            return Unauthorized("Invalid username or password."); 
+            return Unauthorized("Invalid username or password.");
         }
 
         // #TODO: Genera e ritorna un token JWT qui
         // Ritorna i dati dell'utente senza la password
         user.Password = ""; // Rimuove la password prima di ritornare l'oggetto
-        return Ok(new User { 
-            Username = user.Username, 
-            Email = user.Email, 
-            CreateTime = user.CreateTime 
+        return Ok(new User
+        {
+            Username = user.Username,
+            Email = user.Email,
+            CreateTime = user.CreateTime
         });
     }
 
@@ -83,7 +86,8 @@ public class UsersController : ControllerBase
     [HttpPost("Register")]
     public async Task<ActionResult<IEnumerable<User>>> PostUser(
         string username, string password, string? email
-    ){
+    )
+    {
         // Controlla se l'username esiste già
         /*
         var userList = await _context.Users
@@ -97,10 +101,10 @@ public class UsersController : ControllerBase
         // Controllo più efficiente se l'username esiste già
         bool giaEsistente = await _context.Users
             .AnyAsync(u => u.Username == username);
-        
+
         if (giaEsistente)
         {
-            return BadRequest("Username already exists");;
+            return BadRequest("Username already exists"); ;
         }
 
         // #TODO: genera l'hash della password prima di salvarla nel DB
@@ -139,7 +143,7 @@ public class UsersController : ControllerBase
     // #TODO: quando si aggiunge il JWT, proteggere questo endpoint per permettere solo all'utente di aggiornare i propri dati
     // verificando che il token JWT corrisponda all'username da aggiornare
     // Aggiorna i dati di un utente dato l'username
-    [HttpPut ("{username}")]
+    [HttpPut("{username}")]
     public async Task<IActionResult> PutUser(string username, string password, string email)
     {
         var user = await _context.Users.FindAsync(username);

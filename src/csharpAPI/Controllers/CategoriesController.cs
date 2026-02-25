@@ -20,30 +20,48 @@ public class CategoriesController : ControllerBase
     [HttpGet("AllCategories")]
     public async Task<ActionResult<IEnumerable<Category>>> GetAllCategories()
     {
-        return await _context.Categories.ToListAsync();
+        return await _context.Categories.OrderBy(c => c.IdCategory).ToListAsync();
     }
 
     // #TODO: Controllare se il nome della categoria è già presente, se si restituire un errore (visto che è PK)
-    // #TODO: Controllare se esiste un "buco" nelle categorie (es. 1, 2, 8) e se si usare quel id_category invece di creare una nuova potenza di 2
     // inserisci una categoria
     [HttpPost("AddCategory")]
     public async Task<ActionResult<Category>> AddCategory([FromBody] string nome)
     {
         // 1. Conta quanti record ci sono
         var count = await _context.Categories.CountAsync();
-        if (count >= 32) return BadRequest("Limite massimo di 32 categorie raggiunto.");
+        if (count >= 31) return BadRequest("Limite massimo di 32 categorie raggiunto.");
+
+        // Controlla se esiste già una categoria con lo stesso nome
+        bool giaEsistente = await _context.Categories.AnyAsync(c => c.NameCategory == nome);
+        if (giaEsistente) return BadRequest("Categoria già esistente.");
 
         // 2. trova  l'ultimo id_category usato piu alto
         var maxId = await _context.Categories.MaxAsync(c => (int?)c.IdCategory) ?? 0;
 
-        // 3. Calcola il prossimo id_category come potenza di 2
-        var nextId = maxId == 0 ? 1 : (uint)maxId<<1; // Sposta a sinistra di 1 bit per ottenere la prossima potenza di 2
+        // vede se esiste un "buco" nelle categorie (es. 1, 2, 8) e se si usare quel id_category invece di creare una nuova potenza di 2
+        var existingIds = await _context.Categories.Select(c => c.IdCategory).ToListAsync();
+        for (int i = 0; i < 32; i++)
+        {
+            int potentialId = 1 << i; // Calcola la potenza di 2 (1, 2, 4, 8, 16, 32)
+            if (!existingIds.Contains(potentialId))
+            {
+                maxId = potentialId; // Usa il "buco" trovato
+                break;
+            }
+        }
+        try 
+        {
+            var category = new Category { IdCategory = maxId, NameCategory = nome };
+            _context.Categories.Add(category);
+            await _context.SaveChangesAsync();
 
-        var category = new Category { IdCategory = (int)nextId, NameCategory = nome };
-        _context.Categories.Add(category);
-        await _context.SaveChangesAsync();
-
-        return Ok(category);
+            return Ok(category);
+        }
+        catch (DbUpdateException)
+        {
+            return BadRequest("Errore di validazione del Database (Bitmask non valida).");
+        }
     }
 
     // Aggiorna categoria

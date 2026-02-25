@@ -42,6 +42,9 @@ public partial class GestioLanContext : DbContext
 
             entity.ToTable("category");
 
+            // Conrolla che id_category sia una potenza di 2 (1, 2, 4, 8, 16, 32)
+            entity.ToTable(t => t.HasCheckConstraint("CK_Category_Bitmask", "(id_category > 0) AND (id_category & (id_category - 1) = 0)"));
+
             entity.HasIndex(e => e.NameCategory, "nome_categoria_UNIQUE").IsUnique();
 
             entity.Property(e => e.IdCategory)

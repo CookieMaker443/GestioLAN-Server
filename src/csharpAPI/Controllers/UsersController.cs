@@ -147,6 +147,7 @@ public class UsersController : ControllerBase
     {
         // Controlla se l'utente esiste, e lo seleziona
         var user = await _context.Users.FindAsync(username);
+        string message = "";
 
         if (user == null)
         {
@@ -155,7 +156,7 @@ public class UsersController : ControllerBase
 
         if(user.Username == newUser.Username || string.IsNullOrEmpty(newUser.Username))
         {
-            return Ok("Username is equal, no update needed.");
+            message += "Username is equal, no update needed.\n";
         }
         else
         {
@@ -164,7 +165,7 @@ public class UsersController : ControllerBase
 
         if(user.Email == newUser.Email || string.IsNullOrEmpty(newUser.Email))
         {
-            return Ok("Email is equal, no update needed.");
+            message += "Email is equal, no update needed.\n";
         }
         else
         {
@@ -173,7 +174,7 @@ public class UsersController : ControllerBase
 
         if(Hash.HashPassword(newUser.Password) == user.Password || string.IsNullOrEmpty(newUser.Password))
         {
-            return Ok("Password is equal, no update needed.");
+            message += "Password is equal, no update needed.\n";
         }
         else
         {
@@ -183,6 +184,6 @@ public class UsersController : ControllerBase
         _context.Entry(user).State = EntityState.Modified;
         await _context.SaveChangesAsync();
 
-        return NoContent();
+        return Ok(message);
     }
 }

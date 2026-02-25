@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using csharpAPI.Models;
 using csharpAPI.Utils.Hash;
+using csharpAPI.Utils.JWT; // Per la classe JWT
+using Microsoft.AspNetCore.Authorization; // Per l'attributo [Authorize]
 
 namespace csharpAPI.Controllers;
 
@@ -10,13 +12,16 @@ namespace csharpAPI.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly GestioLanContext _context;
+    private readonly JWT _jwt;
 
-    public UsersController(GestioLanContext context)
+    public UsersController(GestioLanContext context, JWT jwt)
     {
         _context = context;
+        _jwt = jwt;
     }
 
     // GET users di debug
+    //[Authorize] // Protegge questo endpoint, richiede un token JWT valido per accedervi
     [HttpGet("AllUsers")]
     public async Task<ActionResult<IEnumerable<User>>> GetAllUsers()
     {
@@ -53,7 +58,6 @@ public class UsersController : ControllerBase
         User loginUserdata
     )
     {
-
         // Primo controllo sui dati ricevuti
         if (loginUserdata == null || string.IsNullOrEmpty(loginUserdata.Username) || string.IsNullOrEmpty(loginUserdata.Password))
         {
@@ -71,59 +75,50 @@ public class UsersController : ControllerBase
             return Unauthorized("Invalid username or password.");
         }
 
-        // #TODO: Genera e ritorna un token JWT qui
         // Ritorna i dati dell'utente senza la password
         user.Password = ""; // Rimuove la password prima di ritornare l'oggetto
-        return Ok(new User
-        {
-            Username = user.Username,
-            Email = user.Email,
-            CreateTime = user.CreateTime
-        });
+        string token = _jwt.GenerateToken(user.Username);
+        
+        return Ok(new { 
+            User = user, 
+            Token = token 
+            }
+        );
     }
 
     // Crea un nuovo utente
+    // #TODO: se la tabella user è vuota, fa fare una registrazione, altrimento un admin puo aggiungere utenti (con JWT)
     [HttpPost("Register")]
     public async Task<ActionResult<IEnumerable<User>>> PostUser(
-        string username, string password, string? email
+        [FromBody] User user
     )
     {
         // Controlla se l'username esiste già
-        /*
-        var userList = await _context.Users
-            .Where(u => u.Username == username)
-            .ToListAsync();
-
-        if(userList.Count > 0){
-            return BadRequest("Username already exists");
-        }*/
-
-        // Controllo più efficiente se l'username esiste già
         bool giaEsistente = await _context.Users
-            .AnyAsync(u => u.Username == username);
+            .AnyAsync(u => u.Username == user.Username);
 
         if (giaEsistente)
         {
             return BadRequest("Username already exists"); ;
         }
 
-        // #TODO: genera l'hash della password prima di salvarla nel DB
         // aggiunge il nuovo utente
+        string email = string.IsNullOrEmpty(user.Email) ? null : user.Email; // Se l'email è vuota, la setta a null
         User newUser = new User
         {
-            Username = username,
-            Password = Hash.HashPassword(password),
-            //Password = password,
+            Username = user.Username,
+            Password = Hash.HashPassword(user.Password),
             Email = email,
             CreateTime = DateTime.Now
         };
         _context.Users.Add(newUser);
         await _context.SaveChangesAsync();
-
-        return await _context.Users.ToListAsync();
+        return Ok();
     }
 
     // Elimina un utente dato l'username
+    // #TODO: sono un user "admin" puo eliminare un altro user
+    //[Authorize]
     [HttpDelete("DeleteUser")]
     public async Task<IActionResult> DeleteUser(string username)
     {
@@ -141,20 +136,49 @@ public class UsersController : ControllerBase
 
 
     // #TODO: quando si aggiunge il JWT, proteggere questo endpoint per permettere solo all'utente di aggiornare i propri dati
+    // #TODO: quando si aggiunge il flag "admin" agli utenti, permettere agli admin di aggiornare i dati di qualsiasi utente, sempre
+    // #TODO: Quandi si aggiungono leimmagini, aggiornare qui
     // verificando che il token JWT corrisponda all'username da aggiornare
     // Aggiorna i dati di un utente dato l'username
+    // [Authorize]
     [HttpPut("{username}")]
-    public async Task<IActionResult> PutUser(string username, string password, string email)
+    public async Task<IActionResult> PutUser(
+        string username, [FromBody] User newUser)
     {
+        // Controlla se l'utente esiste, e lo seleziona
         var user = await _context.Users.FindAsync(username);
+
         if (user == null)
         {
             return NotFound();
         }
 
+        if(user.Username == newUser.Username || string.IsNullOrEmpty(newUser.Username))
+        {
+            return Ok("Username is equal, no update needed.");
+        }
+        else
+        {
+            user.Username = newUser.Username;
+        }
 
-        user.Password = password;
-        user.Email = email;
+        if(user.Email == newUser.Email || string.IsNullOrEmpty(newUser.Email))
+        {
+            return Ok("Email is equal, no update needed.");
+        }
+        else
+        {
+            user.Email = newUser.Email;
+        }
+
+        if(Hash.HashPassword(newUser.Password) == user.Password || string.IsNullOrEmpty(newUser.Password))
+        {
+            return Ok("Password is equal, no update needed.");
+        }
+        else
+        {
+            user.Password = Hash.HashPassword(newUser.Password);
+        }
 
         _context.Entry(user).State = EntityState.Modified;
         await _context.SaveChangesAsync();

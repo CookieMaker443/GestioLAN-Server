@@ -68,32 +68,46 @@ public class CategoriesController : ControllerBase
     [HttpPut("UpdateCategory/{id}")]
     public async Task<ActionResult<Category>> UpdateCategory(int id, Category category)
     {
-        /*
-        if (id != category.Id)
+        // coontrolla se sono uguali
+        if (id != category.IdCategory)
         {
-            return BadRequest();
+            return BadRequest("L'ID nella URL non corrisponde all'ID nel corpo della richiesta.");
         }
 
-        _context.Entry(category).State = EntityState.Modified;
+        // Controlla se il nome della categoria è vuoto
+        if (string.IsNullOrEmpty(category.NameCategory))
+        {
+            return BadRequest("Il nome della categoria non può essere vuoto.");
+        }
 
-        try
+        // Controlla se esiste già un'altra categoria con lo stesso nome
+        if(await _context.Categories.AnyAsync(c => c.NameCategory == category.NameCategory && c.IdCategory != id))
+        {
+            return BadRequest("Esiste già una categoria con questo nome.");
+        }
+
+        // Controlla se stai modificando la stessa risorsa con gli stessi dati
+        if(await _context.Categories.AnyAsync(c => c.NameCategory == category.NameCategory && c.IdCategory == id))
+        {
+            return BadRequest("La categoria è già quella che stai cercando di modificare.");
+        }
+
+        // Controlla se la categoria esiste (se esiste, l'id dovrebbe essere valido, altrimenti restituirebbe NotFound)
+        var catInDb = await _context.Categories.FindAsync(id);
+        if (catInDb == null) { return NotFound(); }
+
+        string oldName = catInDb.NameCategory; // Salva il vecchio nome per il messaggio di risposta
+        catInDb.NameCategory = category.NameCategory;
+        try 
         {
             await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!CategoryExists(id))
-            {
-                return NotFound();
-            }
-            else
-            {
-                throw;
-            }
-        }
-        */
-        return NoContent();
 
+            return Ok($"Categoria `{id}` modificata da '{oldName}' a '{category.NameCategory}'");
+        }
+        catch (DbUpdateException)
+        {
+            return BadRequest("Errore di validazione del Database (Bitmask non valida).");
+        }
     }
 
     // rimuovi categoria

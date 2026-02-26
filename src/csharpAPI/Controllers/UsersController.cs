@@ -137,14 +137,15 @@ public class UsersController : ControllerBase
     }
 
 
+    
     // #TODO: quando si aggiunge il JWT, proteggere questo endpoint per permettere solo all'utente di aggiornare i propri dati
     // #TODO: quando si aggiunge il flag "admin" agli utenti, permettere agli admin di aggiornare i dati di qualsiasi utente, sempre
     // #TODO: Quandi si aggiungono leimmagini, aggiornare qui
     // verificando che il token JWT corrisponda all'username da aggiornarez<
     // Aggiorna i dati di un utente dato l'username
     // [Authorize]
-    [HttpPut("{username}")]
-    public async Task<IActionResult> PutUser(
+    [HttpPut("{sourceUsername}")]
+    public async Task<IActionResult> PutUserTest(
         string sourceUsername, string? targetUsername, [FromBody] User newUser)
     {
         // Controlla se l'utente esiste, e lo seleziona

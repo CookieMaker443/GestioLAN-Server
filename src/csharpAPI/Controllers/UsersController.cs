@@ -270,4 +270,72 @@ public class UsersController : ControllerBase
             }
         }
     }
+
+    [Authorize]
+    [HttpPut("{targetUsername}")]
+    public async Task<IActionResult> PutUser(
+        string targetUsername, [FromBody] User newUser)
+    {
+        var currentUsername = User.Identity?.Name;
+        var currentUserIsAdmin = User.FindFirst("isAdmin")?.Value == "true";
+        string message = "";
+        message += $"Current user: {currentUsername}, Target user: {targetUsername}, IsAdmin: {currentUserIsAdmin}\n";
+
+        // Autorizzazione: puoi procedere solo se sei l'interessato O sei un Admin
+        if (currentUsername != targetUsername && !currentUserIsAdmin)
+        {
+            return Forbid("You are not authorized to update this user's data.");
+        }
+
+        var user = await _context.Users.FindAsync(targetUsername);
+        if (user == null) return NotFound("Utente non trovato.");
+
+        if(user.Email == newUser.Email)
+            {
+                message += "Email is equal, no update needed.\n";
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(newUser.Email))
+                {
+                    user.Email = null; // Se l'email è vuota, la setta a null
+                    message += "Email set to null.\n";
+                }
+                else{
+                    user.Email = newUser.Email;
+                    message += "Email updated.\n";
+                }
+            }
+
+        if(Hash.HashPassword(newUser.Password) == user.Password || string.IsNullOrEmpty(newUser.Password))
+        {
+            message += "Password is equal, no update needed.\n";
+        }
+        else
+        {
+            user.Password = Hash.HashPassword(newUser.Password);
+            message += "Password updated.\n";
+        }
+
+        if (currentUserIsAdmin)
+        {
+            if (user.IsAdmin != newUser.IsAdmin)
+            {
+                user.IsAdmin = newUser.IsAdmin;
+                message += "IsAdmin updated.\n";
+            }
+            else
+            {
+                message += "IsAdmin is equal, no update needed.\n";
+            }
+        }
+        else
+        {
+            message += "You are not an Admin, you cannot change the IsAdmin flag.\n";
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(message);
+    }
 }

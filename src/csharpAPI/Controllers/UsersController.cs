@@ -77,7 +77,7 @@ public class UsersController : ControllerBase
 
         // Ritorna i dati dell'utente senza la password
         user.Password = ""; // Rimuove la password prima di ritornare l'oggetto
-        string token = _jwt.GenerateToken(user.Username);
+        string token = _jwt.GenerateToken(user);
         
         return Ok(new { 
             User = user, 
@@ -109,6 +109,7 @@ public class UsersController : ControllerBase
             Username = user.Username,
             Password = Hash.HashPassword(user.Password),
             Email = email,
+            IsAdmin = user.IsAdmin,
             CreateTime = DateTime.Now
         };
         _context.Users.Add(newUser);
@@ -117,8 +118,7 @@ public class UsersController : ControllerBase
     }
 
     // Elimina un utente dato l'username
-    // #TODO: sono un user "admin" puo eliminare un altro user
-    //[Authorize]
+    [Authorize(Policy = "AdminOnly")] // Solo gli admin possono accedere a questo endpoint
     [HttpDelete("DeleteUser")]
     public async Task<IActionResult> DeleteUser(string username)
     {
@@ -179,6 +179,15 @@ public class UsersController : ControllerBase
         else
         {
             user.Password = Hash.HashPassword(newUser.Password);
+        }
+
+        if(user.IsAdmin == newUser.IsAdmin)
+        {
+            message += "IsAdmin is equal, no update needed.\n";
+        }
+        else
+        {
+            user.IsAdmin = newUser.IsAdmin;
         }
 
         _context.Entry(user).State = EntityState.Modified;

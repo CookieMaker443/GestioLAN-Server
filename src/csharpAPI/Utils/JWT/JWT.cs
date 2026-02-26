@@ -2,6 +2,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using csharpAPI.Models;
 
 namespace csharpAPI.Utils.JWT;
 public class JWT
@@ -13,15 +14,21 @@ public class JWT
         _conf = configuration;
     }
 
-    public string GenerateToken(string username)
+    public string GenerateToken(User user)
     {
         var jwtSecret = _conf["JWT-Settings:key"];
         var keyBytes = Encoding.ASCII.GetBytes(jwtSecret);
 
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim("isAdmin", user.IsAdmin.ToString().ToLower()) // "true" o "false"
+        };
+
         var tokenHandler = new JwtSecurityTokenHandler();
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, username) }),
+            Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddHours(1),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256Signature)
         };

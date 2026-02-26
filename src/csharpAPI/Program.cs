@@ -65,6 +65,12 @@ builder.Services.AddAuthentication(options => {
 builder.Services.AddScoped<JWT>(); // Registra la classe JWT come servizio, così può essere iniettata nei controller
 
 
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("isAdmin", "true"));
+});
+
 // qui costruisce l'app con le configurazioni di prima e la esegue
 var app = builder.Build();
 

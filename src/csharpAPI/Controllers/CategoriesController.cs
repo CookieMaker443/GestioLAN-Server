@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using csharpAPI.Models;
+using Microsoft.AspNetCore.Authorization; // Per l'attributo [Authorize]
 
 namespace csharpAPI.Controllers;
 

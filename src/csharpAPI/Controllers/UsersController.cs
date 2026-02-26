@@ -28,11 +28,11 @@ public class UsersController : ControllerBase
         return await _context.Users.ToListAsync();
     }
 
+    /*
     // Ottiene la lista degli utenti del DB con filtro per username e password con GET
     [HttpGet]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers(
-        [FromQuery] string? username,
-        [FromQuery] string? password
+        [FromBody] string? username, [FromBody] string? password
     )
     {
         IQueryable<User> query = _context.Users;
@@ -47,15 +47,13 @@ public class UsersController : ControllerBase
         // utente inesistente, login fallito
         return BadRequest("Invalid username or password");
         //return await _context.Users.ToListAsync();
-    }
+    }*/
 
 
     // Login endpoint 
-    // L'utente con un POST invia le credenziali per il login in un JSON, e in 
-    // caso di successo riceve i dati dell'utente (senza password) e un token JWT
     [HttpPost("Login")]
     public async Task<ActionResult<IEnumerable<User>>> LoginUser(
-        User loginUserdata
+        [FromBody] User loginUserdata
     )
     {
         // Primo controllo sui dati ricevuti
@@ -87,7 +85,6 @@ public class UsersController : ControllerBase
     }
 
     // Crea un nuovo utente
-    // #TODO: se la tabella user è vuota, fa fare una registrazione, altrimento un admin puo aggiungere utenti (con JWT)
     [HttpPost("Register")]
     public async Task<ActionResult<IEnumerable<User>>> PostUser(
         [FromBody] User user
@@ -112,13 +109,18 @@ public class UsersController : ControllerBase
             IsAdmin = user.IsAdmin,
             CreateTime = DateTime.Now
         };
+
+        if (await _context.Users.CountAsync() == 0)
+        {
+            newUser.IsAdmin = true; // Se è il primo utente, lo setta come admin
+        }
+
         _context.Users.Add(newUser);
         await _context.SaveChangesAsync();
         return Ok();
     }
 
-    // Elimina un utente dato l'username
-    [Authorize(Policy = "AdminOnly")] // Solo gli admin possono accedere a questo endpoint
+    //[Authorize(Policy = "AdminOnly")] // Solo gli admin possono accedere a questo endpoint
     [HttpDelete("DeleteUser")]
     public async Task<IActionResult> DeleteUser(string username)
     {
@@ -138,15 +140,15 @@ public class UsersController : ControllerBase
     // #TODO: quando si aggiunge il JWT, proteggere questo endpoint per permettere solo all'utente di aggiornare i propri dati
     // #TODO: quando si aggiunge il flag "admin" agli utenti, permettere agli admin di aggiornare i dati di qualsiasi utente, sempre
     // #TODO: Quandi si aggiungono leimmagini, aggiornare qui
-    // verificando che il token JWT corrisponda all'username da aggiornare
+    // verificando che il token JWT corrisponda all'username da aggiornarez<
     // Aggiorna i dati di un utente dato l'username
     // [Authorize]
     [HttpPut("{username}")]
     public async Task<IActionResult> PutUser(
-        string username, [FromBody] User newUser)
+        string sourceUsername, string? targetUsername, [FromBody] User newUser)
     {
         // Controlla se l'utente esiste, e lo seleziona
-        var user = await _context.Users.FindAsync(username);
+        var user = await _context.Users.FindAsync(sourceUsername);
         string message = "";
 
         if (user == null)
@@ -154,45 +156,118 @@ public class UsersController : ControllerBase
             return NotFound();
         }
 
-        if(user.Username == newUser.Username || string.IsNullOrEmpty(newUser.Username))
+        // Se sono uguali, l'user modifica se stesso
+        if(sourceUsername == targetUsername || string.IsNullOrEmpty(targetUsername))
         {
-            message += "Username is equal, no update needed.\n";
+            if(user.Email == newUser.Email)
+            {
+                message += "Email is equal, no update needed.\n";
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(newUser.Email))
+                {
+                    user.Email = null; // Se l'email è vuota, la setta a null
+                    message += "Email set to null.\n";
+                }
+                else{
+                    user.Email = newUser.Email;
+                    message += "Email updated.\n";
+                }
+            }
+
+            if(Hash.HashPassword(newUser.Password) == user.Password || string.IsNullOrEmpty(newUser.Password))
+            {
+                message += "Password is equal, no update needed.\n";
+            }
+            else
+            {
+                user.Password = Hash.HashPassword(newUser.Password);
+                message += "Password updated.\n";
+            }
+
+            if(user.IsAdmin == true)
+            {
+                if(user.IsAdmin == newUser.IsAdmin)
+                {
+                    message += "IsAdmin is equal, no update needed.\n";
+                }
+                else
+                {
+                    user.IsAdmin = newUser.IsAdmin;
+                    message += "IsAdmin updated.\n";
+                }
+            }
+            else
+            {
+                message += "IsAdmin is false, no update allowed.\n";
+            }
+
+            _context.Entry(user).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Ok(message);
         }
         else
         {
-            user.Username = newUser.Username;
-        }
+            if(sourceUsername != targetUsername && !string.IsNullOrEmpty(targetUsername) && user.IsAdmin == true)
+            {
+                // trova l'utente da modificare, e lo seleziona
+                var targerUser = await _context.Users.FindAsync(targetUsername);
+                if (targerUser == null)
+                {
+                    return NotFound("Target user not found.");
+                }
+                
+                if(targerUser.Email == newUser.Email)
+                {
+                    message += "Target user's email is equal, no update needed.\n";
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(newUser.Email))
+                    {
+                        targerUser.Email = null; // Se l'email è vuota, la setta a null
+                        message += "Target user's email set to null.\n";
+                    }
+                    else{
+                        targerUser.Email = newUser.Email;
+                        message += "Target user's email updated.\n";
+                    }
+                }
 
-        if(user.Email == newUser.Email || string.IsNullOrEmpty(newUser.Email))
-        {
-            message += "Email is equal, no update needed.\n";
-        }
-        else
-        {
-            user.Email = newUser.Email;
-        }
+                if(Hash.HashPassword(newUser.Password) == targerUser.Password || string.IsNullOrEmpty(newUser.Password))
+                {
+                    message += "Target user's password is equal, no update needed.\n";
+                }
+                else
+                {
+                    targerUser.Password = Hash.HashPassword(newUser.Password);
+                    message += "Target user's password updated.\n";
+                }
 
-        if(Hash.HashPassword(newUser.Password) == user.Password || string.IsNullOrEmpty(newUser.Password))
-        {
-            message += "Password is equal, no update needed.\n";
-        }
-        else
-        {
-            user.Password = Hash.HashPassword(newUser.Password);
-        }
+                if(targerUser.IsAdmin == newUser.IsAdmin)
+                {
+                    message += "Target user's IsAdmin is equal, no update needed.\n";
+                }
+                else
+                {
+                    targerUser.IsAdmin = newUser.IsAdmin;
+                    message += "Target user's IsAdmin updated.\n";
+                }
 
-        if(user.IsAdmin == newUser.IsAdmin)
-        {
-            message += "IsAdmin is equal, no update needed.\n";
-        }
-        else
-        {
-            user.IsAdmin = newUser.IsAdmin;
-        }
+                _context.Entry(targerUser).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
 
-        _context.Entry(user).State = EntityState.Modified;
-        await _context.SaveChangesAsync();
-
-        return Ok(message);
+                return Ok(message);
+            }
+            else
+            {
+                message += "Target username cannot be updated, you must be an Admin.\n";
+                _context.Entry(user).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(message);
+            }
+        }
     }
 }

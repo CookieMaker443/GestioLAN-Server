@@ -4,6 +4,9 @@
 ## Attenzione ##
 
 Per collegarsi al database, ti serve la stringa di connessione, e si chiama `GestioLANConnection`
+Ti serve anche una JWT key e si chiama `JWT-Settings:key`
+
+*La cartella GestioLan-docs è possibile aprirla con Obsidian*
 
 ## Senza Docker (Sconsigliato)
 Se l'API la esegui senza docker, ti serve creare la stringa di connessione e la JWT Key
@@ -20,7 +23,7 @@ User Id     : Utente di MySQL / mariadb
 Password    : Password di MySQL / mariadb
 (per userid, nel database è meglio creare un utente NON root, il cui scopo è soltanto interagire con questo database)
 
-Per la WT key, alla stessa maniera, o la passi in appsettings.json oppure ancora meglio come user secret con questo comando:
+Per la JWT key, alla stessa maniera, o la passi in appsettings.json oppure ancora meglio come user secret con questo comando:
 ```Bash
 dotnet user-secrets set "JWT-Settings:key" "LaTuaKeyCreataConMinimo32Caratteri"
 ```

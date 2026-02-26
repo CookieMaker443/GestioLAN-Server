@@ -26,6 +26,9 @@ src/charpAPI/bin
 *.exe
 .env
 
+# configurazioni di obsidian
+**/GestioLan-docs/.obsidian/
+
 appsettings.Development.json
 appsettings.Staging.json
 appsettings.Production.json

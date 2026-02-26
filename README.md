@@ -6,9 +6,10 @@
 Per collegarsi al database, ti serve la stringa di connessione, e si chiama `GestioLANConnection`
 
 ## Senza Docker (Sconsigliato)
-Se l'API la esegui senza docker, ti serve creare la stringa di connessione, la passi o in appsettings.json oppure ancora meglio come user secret con questo comando:
+Se l'API la esegui senza docker, ti serve creare la stringa di connessione e la JWT Key
+La stringa di connessione la passi o in appsettings.json oppure ancora meglio come user secret con questo comando:
 ```Bash
-Lo inserisco domani il comando che non me lo ricordo, ho sonno
+dotnet user-secrets set "GestioLANConnection" "Server=IP_ADDRESS;Database=GestioLAN;User=YOUR_USER;Password=YOUR_PASSWORD;"
 ```
 essa deve avere una struttura come questa:
 `"GestioLANConnection": "Server=IP_ADDRESS;Port=3306;Database=GestioLAN;Uid=YOUR_USER;Pwd=YOUR_PASSWORD;`
@@ -18,6 +19,24 @@ Database    : Nome del database
 User Id     : Utente di MySQL / mariadb
 Password    : Password di MySQL / mariadb
 (per userid, nel database è meglio creare un utente NON root, il cui scopo è soltanto interagire con questo database)
+
+Per la WT key, alla stessa maniera, o la passi in appsettings.json oppure ancora meglio come user secret con questo comando:
+```Bash
+dotnet user-secrets set "JWT-Settings:key" "LaTuaKeyCreataConMinimo32Caratteri"
+```
+
+successivamente, spostati nella cartella /src/csharpAPI ed esegui questo comando:
+```Bash
+dotnet run
+```
+
+e l'API sarà in funzione!
+NOTA:
+se questo comando lo esegui sulla tua macchina, dovrai digitare questo nel bowser:
+```Plaintext
+localhost:5069/swagger/index.html
+```
+*/swagger/index.html se sei in Developement mode, e vuoi testare l api da browser*
 
 ## Con Docker (Raccomandato)
 
@@ -64,6 +83,7 @@ I Client si connetteranno alla rete domestica e saranno in grado di comunicare c
 i client sono/saranno: 
 - sia [GestioLAN - Client Desktop](https://github.com/CookieMaker443/GestioLAN-Desktop)
 - sia [GestioLAN - Client Mobile] *Ancora devo iniziare il progetto*
+- sia [GestioLAN - WebApp] *Ancora devo iniziare il progetto*
 
 #### Come funziona? ####
 L'EF Permette ai client di comunicare con il Database
@@ -72,11 +92,13 @@ Pomelo traduce le query, da codice a SQL.
 #### Idea per il futuro -1 ####
 Un idea futura, sarà quella di creare un automazione che esegue periodicamente delle query al DB (secondo certi criteri scelti dall'utente)
 e manda (tramite bot telegram per esempio) dei messaggi con delle informazioni
+*può essere utile per esempio, per sapere se delle scorte di cibo stanno finendo, quindi avere una lista di cose da comprare*
 
 #### Idea per il futuro -2 ####
 Creare un MCP server come client,cosi da poter integrare delle interazioni con degli LLM
 - OUTPUT: un LLM puo fare delle query e in base al contenuto del database, fare delle computazioni 
-( es: "consigliamo cosa preparare per cena usando gli alimenti che ho in casa" )( es: "stampa su un foglio la lista della spesa da fare")
+    - ( es: "consigliamo cosa preparare per cena usando gli alimenti che ho in casa" )
+    - ( es: "stampa su un foglio la lista della spesa da fare")
 - INPUT: un LLM puo aggiungere in maniera smart, item nel database, passandogli lo scontrino della spesa, in modo da poter categorizzare gli oggetti nuovi e inserirli correttamente! 
 
 ## Versione ##

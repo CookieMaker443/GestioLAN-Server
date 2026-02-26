@@ -23,8 +23,8 @@ public class CategoriesController : ControllerBase
         return await _context.Categories.OrderBy(c => c.IdCategory).ToListAsync();
     }
 
-    // #TODO: Controllare se il nome della categoria è già presente, se si restituire un errore (visto che è PK)
     // inserisci una categoria
+    [Authorize(Policy = "AdminOnly")] // Solo gli admin possono accedere a questo endpoint
     [HttpPost("AddCategory")]
     public async Task<ActionResult<Category>> AddCategory([FromBody] string nome)
     {
@@ -65,6 +65,7 @@ public class CategoriesController : ControllerBase
     }
 
     // Aggiorna categoria
+    [Authorize(Policy = "AdminOnly")] // Solo gli admin possono accedere a questo endpoint
     [HttpPut("UpdateCategory/{id}")]
     public async Task<ActionResult<Category>> UpdateCategory(int id, Category category)
     {
@@ -111,6 +112,7 @@ public class CategoriesController : ControllerBase
     }
 
     // rimuovi categoria
+    [Authorize(Policy = "AdminOnly")] // Solo gli admin possono accedere a questo endpoint
     [HttpDelete("DeleteCategory/{id}")]
     public async Task<ActionResult<Category>> DeleteCategory(int id)
     {
@@ -119,6 +121,13 @@ public class CategoriesController : ControllerBase
         {
             return NotFound();
         }
+
+        var prodToUpdate = _context.Items.Where( p => (p.IdCategory & category.IdCategory) != 0).ToList();
+        foreach (var prod in prodToUpdate)
+        {
+            prod.IdCategory = prod.IdCategory & ~category.IdCategory; // Rimuove la categoria usando un AND con il complemento
+        }
+
 
         _context.Categories.Remove(category);
         await _context.SaveChangesAsync();

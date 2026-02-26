@@ -1,0 +1,43 @@
+{
+	"nodes":[
+		{"id":"61d481068bc2602f","type":"group","x":-680,"y":700,"width":1320,"height":700,"label":"Database backend"},
+		{"id":"cf4b85ebb6d7b2f9","type":"group","x":1040,"y":160,"width":870,"height":374,"label":"Login"},
+		{"id":"5dc8152a9f85d8fd","type":"group","x":1040,"y":1280,"width":870,"height":220,"label":"Modify user"},
+		{"id":"b9b1c1d3370236ca","type":"group","x":1040,"y":660,"width":870,"height":215,"label":"Register"},
+		{"id":"1fc666376fe78385","type":"group","x":1040,"y":1000,"width":870,"height":210,"label":"Delete user"},
+		{"id":"fafd78dcd8060c1f","type":"file","file":"Database/Struttura del database;.md","x":-640,"y":760,"width":400,"height":400,"color":"3"},
+		{"id":"fbb5218f59ba8752","type":"text","text":"v11.6","x":-640,"y":1160,"width":250,"height":60},
+		{"id":"a2f161845440d50e","type":"file","file":"Database/API Csharp.md","x":180,"y":760,"width":400,"height":400,"color":"4"},
+		{"id":"bc1883c1816df6ba","type":"text","text":"pomelo","x":-160,"y":880,"width":250,"height":60},
+		{"id":"55853ac113a7fc35","type":"text","text":".NET 8.0","x":180,"y":1160,"width":250,"height":60},
+		{"id":"3b6bb878576decaa","type":"file","file":"Assets/logo.png","x":-235,"y":200,"width":400,"height":400},
+		{"id":"f4f2a18b25caeb69","type":"text","text":"username\npassword","x":1360,"y":210,"width":125,"height":60},
+		{"id":"d0356d8fd2af6ada","type":"text","text":"Da Aggiungere:\nItemsImages\nUserImages\nDefaultImages","x":-640,"y":1260,"width":250,"height":113},
+		{"id":"1f8712d389898438","type":"text","text":"Client","x":1640,"y":240,"width":250,"height":60},
+		{"id":"0679a9d1bb80a7aa","type":"text","text":"DELETE: Users/DeleteUser","x":1060,"y":1130,"width":250,"height":60,"color":"1"},
+		{"id":"47226ea5fbd402dc","type":"text","text":"Client","x":1640,"y":1130,"width":250,"height":60},
+		{"id":"e84b89a1fe67cabb","type":"text","text":"username\npassword\nJWT","x":1337,"y":1020,"width":128,"height":87},
+		{"id":"d188f348779bbb9d","type":"text","text":"PUT: Users/{username}","x":1060,"y":1420,"width":250,"height":60,"color":"3"},
+		{"id":"8d5cc8ad437f99e5","type":"text","text":"POST: Users/Login","x":1060,"y":300,"width":250,"height":60,"color":"4"},
+		{"id":"c29f02729fdc148c","type":"text","text":"Client","x":1640,"y":360,"width":250,"height":60},
+		{"id":"8cba445d83eef8d8","type":"text","text":"username\nmail\nJWT","x":1360,"y":390,"width":125,"height":94},
+		{"id":"8d27564d83c00474","type":"text","text":"Client","x":1640,"y":1420,"width":250,"height":60},
+		{"id":"caef0b9667a8b3a3","type":"text","text":"Client","x":1640,"y":795,"width":250,"height":60},
+		{"id":"15c3e37650a8eaef","type":"text","text":"username\npassword\nemail ?","x":1337,"y":680,"width":128,"height":95},
+		{"id":"96824ebc89008718","type":"text","text":"POST: Users/Register","x":1060,"y":795,"width":250,"height":60,"color":"4"},
+		{"id":"de1657117c20c032","type":"text","text":"username\npassword\nJWT","x":1337,"y":1300,"width":128,"height":100},
+		{"id":"73c4cb8fd5befebc","x":4639,"y":1074,"width":250,"height":1866,"type":"text","text":"EMAIL:\nINTENSEWORK\nSHOPIFY:\nPOWERPLUS(OFF)\nDAMEME(OFF)\nPRINTFUL:\nPOWERPLUS\ndameme\npagamenti:\npaypal\nALIEXPRESS\nEMAIL:\nSHOPAD443\nINSTAGRAM\n- - -\nTIKTOK:\n- - -\nFACEBOOK:\nPOWERPLUS.SHOP\nTHE REAL WORLD\nHOPLIX\nAMAZON KDP\nCANVA\nFACEBOOK:\nmARCO FERRAUTO\nEMAIL:\nGYMMERPAGE001\nINSTAGRAM\nTIKTOK:\nGYMPRIDE.SPORT\n(BUGGATO)\nFACEBOOK:\nPOWERPLUS.SHOP\nGYMPRIDE.SPORT\nEMAIL:\nanonimoususer1010\nINSTAGRAM:\nuser.bober\nTIKTOK:\n---\nFACEBOOK:\n---\nGOOGLE\nfATSecret\nGOOGLE\nINSTAGRAM\nDAMEME.STORE\nLINKEDIN\nGUMROAD\nshapr3d\nRiadattare shopadd per creare una pagiina dedicata alla computergrafica con blender e cose simili e vendere assets\nGOOGLE\ndropbox\ntrello\nGITHUB\nVisual studio\ncomunity\nMilanote\nindeed\nsolvearn.net\npenpot\nNoOne\npixie.haus\nn8n - localhost"}
+	],
+	"edges":[
+		{"id":"00158beeed9377df","fromNode":"fafd78dcd8060c1f","fromSide":"right","toNode":"a2f161845440d50e","toSide":"left","fromEnd":"arrow"},
+		{"id":"f5ad5974f32c47b0","fromNode":"a2f161845440d50e","fromSide":"right","toNode":"8d5cc8ad437f99e5","toSide":"left"},
+		{"id":"ea0c118eea3f075d","fromNode":"1f8712d389898438","fromSide":"left","toNode":"8d5cc8ad437f99e5","toSide":"right"},
+		{"id":"ebe849b1cff834bd","fromNode":"8d5cc8ad437f99e5","fromSide":"right","toNode":"c29f02729fdc148c","toSide":"left"},
+		{"id":"54fe7fd08d240a1f","fromNode":"a2f161845440d50e","fromSide":"right","toNode":"96824ebc89008718","toSide":"left","fromEnd":"arrow"},
+		{"id":"7bc9b3e20c59caac","fromNode":"caef0b9667a8b3a3","fromSide":"left","toNode":"96824ebc89008718","toSide":"right"},
+		{"id":"a0b5cb11c8d152cf","fromNode":"47226ea5fbd402dc","fromSide":"left","toNode":"0679a9d1bb80a7aa","toSide":"right"},
+		{"id":"50a335efe0199e69","fromNode":"0679a9d1bb80a7aa","fromSide":"left","toNode":"a2f161845440d50e","toSide":"right"},
+		{"id":"9ba0de9d279c04a4","fromNode":"8d27564d83c00474","fromSide":"left","toNode":"d188f348779bbb9d","toSide":"right"},
+		{"id":"14142f0512393cbd","fromNode":"d188f348779bbb9d","fromSide":"left","toNode":"a2f161845440d50e","toSide":"right"}
+	]
+}

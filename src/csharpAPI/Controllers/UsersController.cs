@@ -144,7 +144,7 @@ public class UsersController : ControllerBase
     // verificando che il token JWT corrisponda all'username da aggiornarez<
     // Aggiorna i dati di un utente dato l'username
     // [Authorize]
-    [HttpPut("{sourceUsername}")]
+    [HttpPut("Test/{sourceUsername}")]
     public async Task<IActionResult> PutUserTest(
         string sourceUsername, string? targetUsername, [FromBody] User newUser)
     {

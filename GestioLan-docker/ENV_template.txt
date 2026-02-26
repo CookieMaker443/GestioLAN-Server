@@ -5,4 +5,4 @@ IMAGE_TAG=latest
 DB_NAME=GestioLan
 DB_USERNAME= YourDBNonRootUsername
 DB_PASSWORD= YourDBNonRootPassword
-JWT-key= KeyJWT
+JWT_KEY= KeyJWT

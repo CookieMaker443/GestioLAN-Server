@@ -13,11 +13,13 @@ public class UsersController : ControllerBase
 {
     private readonly GestioLanContext _context;
     private readonly JWT _jwt;
+    private readonly IConfiguration _config;
 
-    public UsersController(GestioLanContext context, JWT jwt)
+    public UsersController(GestioLanContext context, JWT jwt, IConfiguration configuration)
     {
         _context = context;
         _jwt = jwt;
+        _config = configuration;    // serve per accedere pooi agli user secret e alle variabili d ambiente, se necessario
     }
 
     // Login endpoint 
@@ -173,5 +175,36 @@ public class UsersController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(message);
+    }
+
+    // #TODO: Quando si aggiungono le immagini, aggiornare qui
+    // [Authorize]
+    [HttpGet("image/{username}")]
+    public IActionResult GetProfileImage(string username)
+    {
+        // qui si costruisci il percorso interno al container
+
+        // percorso per il server: /app/data/uploads/users/{username}.jpg
+        //var filePath = Path.Combine("/", "app", "data", "uploads", "users", $"{username}.jpg");
+        
+        // Quest crea il percorso per lo sviluppo locale: home/cookie/Docker/services/MariaDb11.6/volumes/images/users
+        //var filePath = Path.Combine("/", "home", "cookie", "Docker", "services", "MariaDb11.6", "volumes", "images", "users", $"{username}.jpg");
+
+        // Questo cerca nelle variabili d'ambiente, se non trova niente usa il percorso di default (quello usato nel docker-compose)
+        //var baseFolder = Environment.GetEnvironmentVariable("UPLOAD_PATH_USERS") ?? "/app/data/uploads/users";
+        
+        // Questo cercherà PRIMA nei User Secrets, poi nelle variabili d'ambiente, poi nel JSON
+        var baseFolder = _config["UPLOAD_PATH_USERS"] ?? "/app/data/uploads/users";
+        var filePath = Path.Combine(baseFolder, $"{username}.jpg");
+
+        // 2. Controlla se il file esiste davvero
+        if (!System.IO.File.Exists(filePath))
+        {
+            return NotFound($"Cercato in: {filePath}");
+        }
+
+        // 3. Leggi il file e sputa fuori i byte
+        var imageBytes = System.IO.File.ReadAllBytes(filePath);
+        return File(imageBytes, "image/jpeg"); // Il browser/client vedrà un file immagine
     }
 }

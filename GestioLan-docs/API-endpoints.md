@@ -1,34 +1,56 @@
 Items endpoint:
-GET
-/api/Items
+- *GET* */api/Items*
+    - [FromQuery] int[] ids_category
+    - [FromQuery] string? name
+    - [FromQuery] int? quantity
+    - [FromQuery] string? type_quantity
+- *GET* */api/Items/{id}*
+    - [FromURL] int id
+- *POST* */api/Items*
+    - [FromQuery] string name
+    - [FromQuery] string? description
+    - [FromQuery] string? image
+    - [FromQuery] int id_category
+    - [FromQuery] int quantity
+    - [FromQuery] string type_quantity
+- *DELETE* */api/Items/{id}*
+    - [FromURL] int id
+- *PUT* */api/Items/{id}*
+    - [FromQuery] int id
+    - [FromQuery] string name
+    - [FromQuery] string description
+    - [FromQuery] string image
+    - [FromQuery] int id_category
+    - [FromQuery] int quantity
+    - [FromQuery] string type_quantity
+    - [FromBody] Item updatedItem
 
-POST
-/api/Items
+Da sistemare questi endpoint
 
-GET
-/api/Items/{id}
 
-DELETE
-/api/Items/{id}
+## User endpoints:
 
-PUT
-/api/Items/{id}
+- *GET* */api/Users/AllUsers*
+- *POST* */api/Users/Login*
+    - [FromBody] User loginUserData
+- *POST* */api/Users/Register*
+    - [FromBody] User user
+- *DELETE* */api/Users/DeleteUser*
+    - [FromQuery] string username
+- *PUT* */api/Users/{targetUsername}*
+    - [FromURL] string targetUsername
+    - [FromBody] user newUser
+- *GET* */image/{username}*
+    - [FromURL] string username
 
-**User endpoint**:
-*GET*
-*/api/Users/AllUsers*
 
-GET
-/api/Users
+## Category endpoints:
 
-POST
-/api/Users/Login
-
-POST
-/api/Users/Register
-
-DELETE
-/api/Users/DeleteUser
-
-PUT
-/api/Users/{username}
+- *GET* */api/Category/AllCategories*
+- *POST* */api/Category/AddCategory* [Authorize(Policy = "AdminOnly")]
+    - [FromBody] string nomeù
+- *PUT* */api/Category/UpdateCategory/{id* [Authorize(Policy = "AdminOnly")]
+    - [FromURL] int id
+    - [FromBody] Category category
+- *DELETE* */api/Category/DeleteCategory/{id}* [Authorize(Policy = "AdminOnly")]
+    - [FromURL] int id

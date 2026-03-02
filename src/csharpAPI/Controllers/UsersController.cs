@@ -108,7 +108,7 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    // #TODO: Quando si aggiungono le immagini, aggiornare qui
+    // #TODO: Quando si aggiorna il proprio username, bisogna vedere ed eventualmente rinominare anche l immagine profilo
     [Authorize]
     [HttpPut("{targetUsername}")]
     public async Task<IActionResult> PutUser(
@@ -177,11 +177,20 @@ public class UsersController : ControllerBase
         return Ok(message);
     }
 
-    // #TODO: Quando si aggiungono le immagini, aggiornare qui
     // [Authorize]
     [HttpGet("image/{username}")]
     public IActionResult GetProfileImage(string username)
     {
+        //var currentUsername = User.Identity?.Name;
+        //var currentUserIsAdmin = User.FindFirst("isAdmin")?.Value == "true";
+        var currentUsername = username; // TEST
+        var currentUserIsAdmin = true; // TEST
+
+        // Autorizzazione: puoi procedere solo se sei l'interessato O sei un Admin
+        if (currentUsername != username && !currentUserIsAdmin)
+        {
+            return Forbid("You are not authorized to update this user's data.");
+        }
         // qui si costruisci il percorso interno al container
 
         // percorso per il server: /app/data/uploads/users/{username}.jpg

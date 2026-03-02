@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using csharpAPI.Models;
+using Microsoft.AspNetCore.Authorization; // Per l'attributo [Authorize]
+
 
 namespace csharpAPI.Controllers;
 
@@ -9,10 +11,12 @@ namespace csharpAPI.Controllers;
 public class ItemsController : ControllerBase
 {
     private readonly GestioLanContext _context;
+    private readonly IConfiguration _config;
 
-    public ItemsController(GestioLanContext context)
+    public ItemsController(GestioLanContext context, IConfiguration configuration)
     {
         _context = context;
+        _config = configuration;
     }
 
     // Ottiene tutti gli oggetti del DB
@@ -82,7 +86,7 @@ public class ItemsController : ControllerBase
     }
 
 
-
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<ActionResult<IEnumerable<Item>>> DeleteItem(int id)
     {
@@ -123,5 +127,80 @@ public class ItemsController : ControllerBase
         return NoContent();
     }
 
+    // NOTA: una chiamata per immagine di item, il client sarà responsabile del caching
+    // [Authorize]
+    [HttpGet("image/{username}")]
+    public IActionResult GetItemImage(string username)
+    {
+        //var currentUsername = User.Identity?.Name;
+        var currentUsername = username; // TEST
 
+        // Autorizzazione: puoi procedere solo se sei l'interessato O sei un Admin
+        if (currentUsername != username)
+        {
+            return Forbid("You are not authorized to update this user's data.");
+        }
+        // qui si costruisci il percorso interno al container
+
+        // percorso per il server: /app/data/uploads/users/{username}.jpg
+        //var filePath = Path.Combine("/", "app", "data", "uploads", "users", $"{username}.jpg");
+        
+        // Quest crea il percorso per lo sviluppo locale: home/cookie/Docker/services/MariaDb11.6/volumes/images/users
+        //var filePath = Path.Combine("/", "home", "cookie", "Docker", "services", "MariaDb11.6", "volumes", "images", "users", $"{username}.jpg");
+
+        // Questo cerca nelle variabili d'ambiente, se non trova niente usa il percorso di default (quello usato nel docker-compose)
+        //var baseFolder = Environment.GetEnvironmentVariable("UPLOAD_PATH_USERS") ?? "/app/data/uploads/users";
+        
+        // Questo cercherà PRIMA nei User Secrets, poi nelle variabili d'ambiente, poi nel JSON
+        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
+        var filePath = Path.Combine(baseFolder, $"{username}.jpg");
+
+        // 2. Controlla se il file esiste davvero
+        if (!System.IO.File.Exists(filePath))
+        {
+            return NotFound($"Cercato in: {filePath}");
+        }
+
+        // 3. Leggi il file e sputa fuori i byte
+        var imageBytes = System.IO.File.ReadAllBytes(filePath);
+        return File(imageBytes, "image/jpeg"); // Il browser/client vedrà un file immagine
+    }
+
+    // [Authorize] 
+    [HttpPost("image/{username}")]
+    public async Task<IActionResult> UploadItemImage(string username, int id, IFormFile file)
+    {
+        //var currentUsername = User.Identity?.Name;
+        var currentUsername = username; // TEST
+
+        // Autorizzazione: puoi procedere solo se sei l'interessato O sei un Admin
+        if (currentUsername != username)
+        {
+            return Forbid("You are not authorized to update this items's data.");
+        }
+
+        if (file == null || file.Length == 0){
+            return BadRequest("Nessun file selezionato.");
+        }
+        // Legge il percorso di base dalla configurazione (User Secrets o Environment)
+        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
+
+        // Assicuriamo che la cartella esista
+        if (!Directory.Exists(baseFolder))
+        {
+            Directory.CreateDirectory(baseFolder);
+        }
+
+        // Creazione del nome del file e il percorso completo
+        var fileName = $"{id}.jpg"; // Forziamo .jpg come deciso
+        var filePath = Path.Combine(baseFolder, fileName);
+
+        // 4. Salviamo il file fisicamente (sovrascrive se esiste già)
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        return Ok(new { message = "Immagine caricata con successo", url = $"/api/Items/image/{username}" });
+    }
 }

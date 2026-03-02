@@ -207,4 +207,44 @@ public class UsersController : ControllerBase
         var imageBytes = System.IO.File.ReadAllBytes(filePath);
         return File(imageBytes, "image/jpeg"); // Il browser/client vedrà un file immagine
     }
+
+    // [Authorize] 
+    [HttpPost("image/{username}")]
+    public async Task<IActionResult> UploadProfileImage(string username, IFormFile file)
+    {
+        //var currentUsername = User.Identity?.Name;
+        //var currentUserIsAdmin = User.FindFirst("isAdmin")?.Value == "true";
+        var currentUsername = username; // TEST
+        var currentUserIsAdmin = true; // TEST
+
+        // Autorizzazione: puoi procedere solo se sei l'interessato O sei un Admin
+        if (currentUsername != username && !currentUserIsAdmin)
+        {
+            return Forbid("You are not authorized to update this user's data.");
+        }
+
+        if (file == null || file.Length == 0){
+            return BadRequest("Nessun file selezionato.");
+        }
+        // Legge il percorso di base dalla configurazione (User Secrets o Environment)
+        var baseFolder = _config["UPLOAD_PATH_USERS"] ?? "/app/data/uploads/users";
+
+        // Assicuriamo che la cartella esista
+        if (!Directory.Exists(baseFolder))
+        {
+            Directory.CreateDirectory(baseFolder);
+        }
+
+        // Creazione del nome del file e il percorso completo
+        var fileName = $"{username}.jpg"; // Forziamo .jpg come deciso
+        var filePath = Path.Combine(baseFolder, fileName);
+
+        // 4. Salviamo il file fisicamente (sovrascrive se esiste già)
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        return Ok(new { message = "Immagine caricata con successo", url = $"/api/Users/image/{username}" });
+    }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using csharpAPI.Models;
+using csharpAPI.Utils.Helpers; // Per la classe StringHelper
 using Microsoft.AspNetCore.Authorization; // Per l'attributo [Authorize]
 
 
@@ -145,6 +146,33 @@ public class ItemsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPut("test/{id}")]
+    public async Task<IActionResult> PutItem(
+        int id, Item updatedItem)
+    {
+        
+        if (id != updatedItem.IdItem)
+        {
+            return BadRequest("Id mismatch");
+        }
+
+        var item = await _context.Items.FindAsync(id);
+        if (item == null)        {
+            return NotFound();
+        }
+
+        item.ItemName = updatedItem.ItemName;
+        item.Description = updatedItem.Description;
+        item.Image = string.IsNullOrWhiteSpace(updatedItem.Image) ? null : updatedItem.Image;
+        item.IdCategory = updatedItem.IdCategory;
+        item.Quantity = updatedItem.Quantity;
+        item.TypeQuantity = updatedItem.TypeQuantity;
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     // NOTA: una chiamata per immagine di item, il client sarà responsabile del caching
     // [Authorize]
     [HttpGet("image/{itemImageName}")]
@@ -185,7 +213,7 @@ public class ItemsController : ControllerBase
 
         // Creazione del nome del file e il percorso completo
         string itemNameSanitized = itemName.Replace(" ", "_"); // Sostituisce gli spazi con underscore
-        string randStr = randomString(8); // Genera una stringa casuale per evitare conflitti di nome
+        string randStr = StringHelper.GenerateRandomString(8); // Genera una stringa casuale per evitare conflitti di nome
         var fileName = $"{randStr}_{itemNameSanitized}.jpg"; // Forziamo .jpg come deciso
         var filePath = Path.Combine(baseFolder, fileName);
 
@@ -197,6 +225,4 @@ public class ItemsController : ControllerBase
 
         return Ok(new { message = "Immagine caricata con successo", url = $"/api/Items/image/{fileName}" });
     }
-
-
 }

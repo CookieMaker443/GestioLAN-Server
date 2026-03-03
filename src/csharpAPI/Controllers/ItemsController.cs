@@ -22,7 +22,7 @@ public class ItemsController : ControllerBase
     // Ottiene tutti gli oggetti del DB
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Item>>> GetItems(
-        [FromQuery] int[] ids_category,
+        [FromQuery] int id_category,
         [FromQuery] string? name,
         [FromQuery] int? quantity,
         [FromQuery] string? type_quantity
@@ -30,11 +30,16 @@ public class ItemsController : ControllerBase
     {
         IQueryable<Item> query = _context.Items;
 
+        /*
         if (ids_category.Any())
         {
             query = query.Where(item => ids_category.Contains(item.IdCategory.Value));
-        }
+        }*/
 
+        if (id_category != 0)
+        {
+            // controllare il WHERE per la bitmask
+        }
 
         if (!string.IsNullOrEmpty(name))
         {
@@ -66,8 +71,17 @@ public class ItemsController : ControllerBase
     // Crea un nuovo oggetto nel DB
     [HttpPost]
     public async Task<ActionResult<IEnumerable<Item>>> PostItem(
-        string name, string? description, string? image, int id_category, int quantity, string type_quantity)
+        string name, string? description, string? image, int[] ids_category, int quantity, string type_quantity)
     {
+        if(string.IsNullOrEmpty(image)){
+            image = null;
+        }
+
+        int id_category = 0;
+        foreach (int id in ids_category)
+        {
+            id_category |= (1 << id); // Imposta il bit corrispondente all'id della categoria
+        }
 
         Item newItem = new Item
         {
@@ -113,6 +127,10 @@ public class ItemsController : ControllerBase
             return BadRequest("Id mismatch");
         }
 
+        if(string.IsNullOrEmpty(image)){
+            image = null;
+        }
+
         updatedItem.ItemName = name;
         updatedItem.Description = description;
         updatedItem.Image = image;
@@ -129,36 +147,18 @@ public class ItemsController : ControllerBase
 
     // NOTA: una chiamata per immagine di item, il client sarà responsabile del caching
     // [Authorize]
-    [HttpGet("image/{username}")]
-    public IActionResult GetItemImage(string username)
+    [HttpGet("image/{itemImageName}")]
+    public IActionResult GetItemImage(string itemImageName)
     {
-        //var currentUsername = User.Identity?.Name;
-        var currentUsername = username; // TEST
-
-        // Autorizzazione: puoi procedere solo se sei l'interessato O sei un Admin
-        if (currentUsername != username)
-        {
-            return Forbid("You are not authorized to update this user's data.");
-        }
         // qui si costruisci il percorso interno al container
-
-        // percorso per il server: /app/data/uploads/users/{username}.jpg
-        //var filePath = Path.Combine("/", "app", "data", "uploads", "users", $"{username}.jpg");
-        
-        // Quest crea il percorso per lo sviluppo locale: home/cookie/Docker/services/MariaDb11.6/volumes/images/users
-        //var filePath = Path.Combine("/", "home", "cookie", "Docker", "services", "MariaDb11.6", "volumes", "images", "users", $"{username}.jpg");
-
-        // Questo cerca nelle variabili d'ambiente, se non trova niente usa il percorso di default (quello usato nel docker-compose)
-        //var baseFolder = Environment.GetEnvironmentVariable("UPLOAD_PATH_USERS") ?? "/app/data/uploads/users";
-        
         // Questo cercherà PRIMA nei User Secrets, poi nelle variabili d'ambiente, poi nel JSON
         var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
-        var filePath = Path.Combine(baseFolder, $"{username}.jpg");
+        var filePath = Path.Combine(baseFolder, itemImageName);
 
         // 2. Controlla se il file esiste davvero
         if (!System.IO.File.Exists(filePath))
         {
-            return NotFound($"Cercato in: {filePath}");
+            return NotFound($"Not Found!");
         }
 
         // 3. Leggi il file e sputa fuori i byte
@@ -167,17 +167,9 @@ public class ItemsController : ControllerBase
     }
 
     // [Authorize] 
-    [HttpPost("image/{username}")]
-    public async Task<IActionResult> UploadItemImage(string username, int id, IFormFile file)
+    [HttpPost("image/{id}")]
+    public async Task<IActionResult> UploadItemImage(int id, string itemName, IFormFile file)
     {
-        //var currentUsername = User.Identity?.Name;
-        var currentUsername = username; // TEST
-
-        // Autorizzazione: puoi procedere solo se sei l'interessato O sei un Admin
-        if (currentUsername != username)
-        {
-            return Forbid("You are not authorized to update this items's data.");
-        }
 
         if (file == null || file.Length == 0){
             return BadRequest("Nessun file selezionato.");
@@ -192,7 +184,9 @@ public class ItemsController : ControllerBase
         }
 
         // Creazione del nome del file e il percorso completo
-        var fileName = $"{id}.jpg"; // Forziamo .jpg come deciso
+        string itemNameSanitized = itemName.Replace(" ", "_"); // Sostituisce gli spazi con underscore
+        string randStr = randomString(8); // Genera una stringa casuale per evitare conflitti di nome
+        var fileName = $"{randStr}_{itemNameSanitized}.jpg"; // Forziamo .jpg come deciso
         var filePath = Path.Combine(baseFolder, fileName);
 
         // 4. Salviamo il file fisicamente (sovrascrive se esiste già)
@@ -201,6 +195,8 @@ public class ItemsController : ControllerBase
             await file.CopyToAsync(stream);
         }
 
-        return Ok(new { message = "Immagine caricata con successo", url = $"/api/Items/image/{username}" });
+        return Ok(new { message = "Immagine caricata con successo", url = $"/api/Items/image/{fileName}" });
     }
+
+
 }

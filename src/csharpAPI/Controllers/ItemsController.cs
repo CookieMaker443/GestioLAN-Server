@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using csharpAPI.Models;
 using csharpAPI.Utils.Helpers; // Per la classe StringHelper
+using csharpAPI.Controllers; // Per la classe ItemsController
 using Microsoft.AspNetCore.Authorization; // Per l'attributo [Authorize]
 
 
@@ -11,6 +12,7 @@ namespace csharpAPI.Controllers;
 [Route("api/[controller]")]
 public class ItemsController : ControllerBase
 {
+    ImagesController imagesController = new ImagesController(_context, _config);
     private readonly GestioLanContext _context;
     private readonly IConfiguration _config;
 
@@ -72,10 +74,10 @@ public class ItemsController : ControllerBase
     // Crea un nuovo oggetto nel DB
     [HttpPost]
     public async Task<ActionResult<IEnumerable<Item>>> PostItem(
-        string name, string? description, string? image, int[] ids_category, int quantity, string type_quantity)
+        string name, string? description, int? id_image, int[] ids_category, int quantity, string type_quantity)
     {
-        if(string.IsNullOrEmpty(image)){
-            image = null;
+        if(id_image == 0){
+            id_image = null;
         }
 
         int id_category = 0;
@@ -88,7 +90,7 @@ public class ItemsController : ControllerBase
         {
             ItemName = name,
             Description = description,
-            Image = image,
+            IdImage = id_image,
             IdCategory = id_category,
             Quantity = quantity,
             TypeQuantity = type_quantity
@@ -120,7 +122,7 @@ public class ItemsController : ControllerBase
 
     [HttpPut("{id}")]
     public async Task<IActionResult> PutItem(
-        int id, string name, string description, string image,
+        int id, string name, string description, int? id_image,
         int id_category, int quantity, string type_quantity, Item updatedItem)
     {
         if (id != updatedItem.IdItem)
@@ -128,13 +130,13 @@ public class ItemsController : ControllerBase
             return BadRequest("Id mismatch");
         }
 
-        if(string.IsNullOrEmpty(image)){
-            image = null;
+        if(id_image == 0){
+            id_image = null;
         }
 
         updatedItem.ItemName = name;
         updatedItem.Description = description;
-        updatedItem.Image = image;
+        updatedItem.IdImage = id_image;
         updatedItem.IdCategory = id_category;
         updatedItem.Quantity = quantity;
         updatedItem.TypeQuantity = type_quantity;
@@ -163,7 +165,7 @@ public class ItemsController : ControllerBase
 
         item.ItemName = updatedItem.ItemName;
         item.Description = updatedItem.Description;
-        item.Image = string.IsNullOrWhiteSpace(updatedItem.Image) ? null : updatedItem.Image;
+        item.IdImage = updatedItem.IdImage;
         item.IdCategory = updatedItem.IdCategory;
         item.Quantity = updatedItem.Quantity;
         item.TypeQuantity = updatedItem.TypeQuantity;
@@ -178,51 +180,13 @@ public class ItemsController : ControllerBase
     [HttpGet("image/{itemImageName}")]
     public IActionResult GetItemImage(string itemImageName)
     {
-        // qui si costruisci il percorso interno al container
-        // Questo cercherà PRIMA nei User Secrets, poi nelle variabili d'ambiente, poi nel JSON
-        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
-        var filePath = Path.Combine(baseFolder, itemImageName);
-
-        // 2. Controlla se il file esiste davvero
-        if (!System.IO.File.Exists(filePath))
-        {
-            return NotFound($"Not Found!");
-        }
-
-        // 3. Leggi il file e sputa fuori i byte
-        var imageBytes = System.IO.File.ReadAllBytes(filePath);
-        return File(imageBytes, "image/jpeg"); // Il browser/client vedrà un file immagine
+        return imagesController.GetItemImage(itemImageName);
     }
 
     // [Authorize] 
     [HttpPost("image/{id}")]
     public async Task<IActionResult> UploadItemImage(int id, string itemName, IFormFile file)
     {
-
-        if (file == null || file.Length == 0){
-            return BadRequest("Nessun file selezionato.");
-        }
-        // Legge il percorso di base dalla configurazione (User Secrets o Environment)
-        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
-
-        // Assicuriamo che la cartella esista
-        if (!Directory.Exists(baseFolder))
-        {
-            Directory.CreateDirectory(baseFolder);
-        }
-
-        // Creazione del nome del file e il percorso completo
-        string itemNameSanitized = itemName.Replace(" ", "_"); // Sostituisce gli spazi con underscore
-        string randStr = StringHelper.GenerateRandomString(8); // Genera una stringa casuale per evitare conflitti di nome
-        var fileName = $"{randStr}_{itemNameSanitized}.jpg"; // Forziamo .jpg come deciso
-        var filePath = Path.Combine(baseFolder, fileName);
-
-        // 4. Salviamo il file fisicamente (sovrascrive se esiste già)
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
-
-        return Ok(new { message = "Immagine caricata con successo", url = $"/api/Items/image/{fileName}" });
+        return await imagesController.UploadItemImage(id, itemName, file);
     }
 }

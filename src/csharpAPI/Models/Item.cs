@@ -11,7 +11,7 @@ public partial class Item
 
     public string? Description { get; set; }
 
-    public string? Image { get; set; }
+    public int? IdImage { get; set; }
 
     public int? IdCategory { get; set; }
 

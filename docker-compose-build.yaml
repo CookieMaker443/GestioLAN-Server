@@ -17,8 +17,8 @@ services:
 
   api:
     build:
-      context: .
-      dockerfile: src/csharpAPI/Dockerfile
+      context: ./src/csharpAPI
+      dockerfile: Dockerfile
     container_name: GestioLAN-API_TEST
     ports:
       - "5169:8080"

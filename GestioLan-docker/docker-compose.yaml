@@ -21,7 +21,7 @@ services:
       - gestionale_network
   api:
     image: ${DOCKER_USER}/${IMAGE_NAME}:latest
-    container_name: GestioLan-API
+    container_name: GestioLan.API
     restart: always
     ports:
       - "5169:8080"
@@ -44,7 +44,7 @@ services:
         # bind:
           # create_host_path: false
       - type: bind
-        source: /docker/services/gestiolan/Containers_logs/gestiolan-api
+        source: /docker/services/gestiolan/Containers_logs/GestioLan.API
         target: /app/logs
         # bind:
           # create_host_path: false

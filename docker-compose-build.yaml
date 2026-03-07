@@ -17,9 +17,9 @@ services:
 
   api:
     build:
-      context: ./src/csharpAPI
+      context: ./src/GestioLan.API
       dockerfile: Dockerfile
-    container_name: GestioLAN-API_TEST
+    container_name: GestioLan.API_TEST
     ports:
       - "5169:8080"
     environment:

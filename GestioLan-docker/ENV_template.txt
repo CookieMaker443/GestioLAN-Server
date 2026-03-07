@@ -1,5 +1,5 @@
 DOCKER_USER=cookiemaker443
-IMAGE_NAME=gestiolan-api
+IMAGE_NAME=GestioLan.API
 IMAGE_TAG=latest
 
 DB_NAME=GestioLan

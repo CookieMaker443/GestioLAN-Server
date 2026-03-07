@@ -13,6 +13,10 @@ __pycache__/
 **/bin/
 **/obj/
 
+src/GestioLan.API/Properties
+src/GestioLan.API/obj
+src/GestioLan.API/bin
+
 src/charpAPI/Properties
 src/charpAPI/obj
 src/charpAPI/bin
@@ -27,7 +31,7 @@ src/charpAPI/bin
 .env
 
 # configurazioni di obsidian
-**/GestioLan-docs/.obsidian/
+**/Docs/.obsidian/
 
 appsettings.Development.json
 appsettings.Staging.json

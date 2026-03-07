@@ -1,6 +1,22 @@
 @csharpAPI_HostAddress = http://localhost:5069
 
-GET {{csharpAPI_HostAddress}}/weatherforecast/
+POST {{csharpAPI_HostAddress}}/api/Users/Login
 Accept: application/json
 
+{
+    "username": "admin",
+    "email": "string",
+    "password": "admin",
+    "isAdmin": true,
+    "createTime": "2026-03-07T21:20:47.860Z"
+}
 ###
+POST {{csharpAPI_HostAddress}}/api/Users/Login
+Accept: application/json
+
+{
+    "username": "admin",
+    "password": "admin",
+}
+###
+

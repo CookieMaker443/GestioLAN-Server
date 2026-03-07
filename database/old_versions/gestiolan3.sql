@@ -1,7 +1,7 @@
 /*M!999999\- enable the sandbox mode */ 
--- MariaDB dump 10.19-12.2.2-MariaDB, for Linux (x86_64)
+-- MariaDB dump 10.19-11.6.2-MariaDB, for debian-linux-gnu (x86_64)
 --
--- Host: 127.0.0.1    Database: GestioLAN
+-- Host: localhost    Database: GestioLAN
 -- ------------------------------------------------------
 -- Server version	11.6.2-MariaDB-ubu2404
 
@@ -22,7 +22,7 @@
 
 DROP TABLE IF EXISTS `__EFMigrationsHistory`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `__EFMigrationsHistory` (
   `MigrationId` varchar(150) NOT NULL,
   `ProductVersion` varchar(32) NOT NULL,
@@ -31,20 +31,45 @@ CREATE TABLE `__EFMigrationsHistory` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `__EFMigrationsHistory`
+--
+
+LOCK TABLES `__EFMigrationsHistory` WRITE;
+/*!40000 ALTER TABLE `__EFMigrationsHistory` DISABLE KEYS */;
+INSERT INTO `__EFMigrationsHistory` VALUES
+('20251120234544_InitialMigration','9.0.11'),
+('20251120235813_RenameItemNameColumn','9.0.11'),
+('20251121000157_RenameItemNameColumn2','9.0.11'),
+('20251123220519_SyntaxRepair','9.0.11'),
+('20251123223133_ChangeSomeLenghts','9.0.11'),
+('20251123224226_AddPKToUser','9.0.11'),
+('20251227021249_AumentoLunghezzaPass','9.0.11');
+/*!40000 ALTER TABLE `__EFMigrationsHistory` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `category`
 --
 
 DROP TABLE IF EXISTS `category`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `category` (
   `id_category` int(11) NOT NULL,
   `name_category` varchar(100) NOT NULL,
   PRIMARY KEY (`id_category`),
-  UNIQUE KEY `nome_categoria_UNIQUE` (`name_category`),
-  CONSTRAINT `CK_Category_Bitmask` CHECK (`id_category` > 0 and `id_category` & `id_category` - 1 = 0)
+  UNIQUE KEY `nome_categoria_UNIQUE` (`name_category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=armscii8 COLLATE=armscii8_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `category`
+--
+
+LOCK TABLES `category` WRITE;
+/*!40000 ALTER TABLE `category` DISABLE KEYS */;
+/*!40000 ALTER TABLE `category` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `items`
@@ -52,7 +77,7 @@ CREATE TABLE `category` (
 
 DROP TABLE IF EXISTS `items`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `items` (
   `id_item` int(11) NOT NULL AUTO_INCREMENT,
   `item_name` varchar(64) NOT NULL,
@@ -66,21 +91,48 @@ CREATE TABLE `items` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `items`
+--
+
+LOCK TABLES `items` WRITE;
+/*!40000 ALTER TABLE `items` DISABLE KEYS */;
+INSERT INTO `items` VALUES
+(5,'Arduino UNO R4','Arduino UNO R4','image',4,1,'item'),
+(6,'Arduino UNO Q','Arduino UNO Q','image',4,2,'item'),
+(7,'cibbo felix','cibbo','image',1,2,'item'),
+(8,'Uovo Kinder',NULL,NULL,0,1,'item');
+/*!40000 ALTER TABLE `items` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `user`
 --
 
 DROP TABLE IF EXISTS `user`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user` (
   `username` varchar(32) NOT NULL,
   `email` varchar(255) DEFAULT NULL,
   `password` varchar(64) NOT NULL,
   `create_time` timestamp NULL DEFAULT current_timestamp(),
-  `IsAdmin` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=armscii8 COLLATE=armscii8_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user`
+--
+
+LOCK TABLES `user` WRITE;
+/*!40000 ALTER TABLE `user` DISABLE KEYS */;
+INSERT INTO `user` VALUES
+('admin','admin@gmail.com','$2a$11$E8B9KyLLIEY2bQbT5vcoFO9ecJHtMhGyUc4Q6rIiWLr5WAo5yYxK.','2025-12-27 14:28:59'),
+('admin2','gay@gmail.com','$2a$11$NR45HgYCuNsZogHp48Bus.kxOOFA0XO/8RxLc.DSzhiyEV9TIyffu','2025-12-27 14:34:31'),
+('admin3',NULL,'$2a$11$OI95NGxay07sHGS6w6liEeRze.c6M8.JBsYymcDsfOFA1QIWX2a7S','2025-12-27 14:38:06'),
+('admin4','ciao@mail.it','$2a$11$A/1d2eDADTXgchjBWnaQnOZdzI4pcQmUpfMeGxapjQWWX8VMM46Tu','2025-12-27 14:38:39');
+/*!40000 ALTER TABLE `user` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -91,4 +143,4 @@ CREATE TABLE `user` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-03-08  0:18:16
+-- Dump completed on 2026-01-20 20:32:20

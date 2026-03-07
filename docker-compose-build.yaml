@@ -1,9 +1,25 @@
 services:
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    container_name: GestioLAN-DB_TEST
+    ports:
+      - "3306:3306"
+    environment:
+      - DB_ROOT_PASSWORD="${DB_ROOT_PASSWORD}"
+      - DB_NAME="${DB_NAME}"
+      - DB_USERNAME="${DB_USERNAME}"
+      - DB_PASSWORD="${DB_PASSWORD}"
+      - DB_PORT="${DB_PORT}"
+    networks: 
+      - gestionale_network # Nome del network per api e db
+
   api:
     build:
       context: .
       dockerfile: src/csharpAPI/Dockerfile
-    container_name: GestioLAN-API
+    container_name: GestioLAN-API_TEST
     ports:
       - "5169:8080"
     environment:

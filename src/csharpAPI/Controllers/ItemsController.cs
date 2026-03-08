@@ -174,19 +174,4 @@ public class ItemsController : ControllerBase
 
         return NoContent();
     }
-
-    // NOTA: una chiamata per immagine di item, il client sarà responsabile del caching
-    // [Authorize]
-    [HttpGet("image/{itemImageName}")]
-    public IActionResult GetItemImage(string itemImageName)
-    {
-        return imagesController.GetItemImage(itemImageName);
-    }
-
-    // [Authorize] 
-    [HttpPost("image/{id}")]
-    public async Task<IActionResult> UploadItemImage(int id, string itemName, IFormFile file)
-    {
-        return await imagesController.UploadItemImage(id, itemName, file);
-    }
 }

@@ -31,10 +31,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: . # Cerca il Dockerfile partendo dalla root
-          file: src/csharpAPI/Dockerfile # Percorso relativo del Dockerfile
+          file: src/GestioLan.API/Dockerfile # Percorso relativo del Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64 # Specifica le piattaforme
           # Qui gestiamo le versioni
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-api:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-api:v1.0.${{ github.run_number }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/GestioLan.API:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/GestioLan.API:v1.0.${{ github.run_number }}

@@ -1,0 +1,10 @@
+DOCKER_USER=cookiemaker443
+IMAGE_NAME=GestioLan.API
+IMAGE_TAG=latest
+
+DB_NAME=GestioLan
+DB_USERNAME= YourDBNonRootUsername
+DB_PASSWORD= YourDBNonRootPassword
+JWT_KEY= KeyJWT
+PATH_USERS=/app/data/uploads/users
+PATH_ITEMS=/app/data/uploads/items

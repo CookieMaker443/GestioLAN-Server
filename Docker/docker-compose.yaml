@@ -1,0 +1,71 @@
+services:
+  db:
+    image: mariadb:11.6 # IMMMAGINE DA CAMBIARE 
+    container_name: GestioLan-Database
+    command: 
+      - "--log-bin=mysql-bin"
+      - "--expire-logs-days=2"  # Cancella i log binari vecchi di 2 giorni
+      - "--max-binlog-size=100M" # Non creare file binari più grandi di 100MB
+    restart: always
+    environment:
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=${DB_NAME}
+      - MARIADB_USER=${DB_USERNAME}
+      - MARIADB_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - type: bind
+        source: /docker/services/gestiolan/gestiolan-mysql
+        target: /var/lib/mysql
+        # bind:
+          # create_host_path: false
+    networks:
+      - gestionale_network
+    healthcheck: # Per verificare che il database sia pronto prima di avviare l'API
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: ${DOCKER_USER}/${IMAGE_NAME}:latest
+    container_name: GestioLan.API
+    restart: always
+    ports:
+      - "5169:8080"
+    environment:
+      # Nota: Server=GestioLan-Database usa il nome del servizio definito sopra
+      - UPLOAD_PATH_USERS=/app/data/uploads/users
+      - UPLOAD_PATH_ITEMS=/app/data/uploads/items
+      - JWT-Settings__key=${JWT_KEY}
+      - ConnectionStrings__GestioLANConnection=Server=GestioLan-Database;Port=3306;Database=${DB_NAME};User Id=${DB_USERNAME};Password=${DB_PASSWORD};SslMode=none;
+      - ASPNETCORE_ENVIRONMENT=Development # Per ora teniamo Development per vedere gli errori
+    volumes:
+      - type: bind
+        source: /docker/services/gestiolan/uploads/users
+        target: /app/data/uploads/users
+        # bind:
+          # create_host_path: false
+      - type: bind
+        source: /docker/services/gestiolan/uploads/items
+        target: /app/data/uploads/items
+        # bind:
+          # create_host_path: false
+      - type: bind
+        source: /docker/services/gestiolan/Containers_logs/GestioLan.API
+        target: /app/logs
+        # bind:
+          # create_host_path: false
+    networks: 
+      - gestionale_network # Nome del network per api e db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Massimo 10 Megabyte per file
+        max-file: "3"     # Tiene al massimo 3 file (totale 30MB)
+    depends_on: # Per assicurarsi che il database sia avviato prima dell'API
+      db:
+        condition: service_healthy
+
+networks: 
+  gestionale_network: 
+    # external: true 

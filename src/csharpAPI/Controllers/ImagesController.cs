@@ -23,14 +23,20 @@ public class ImagesController : ControllerBase
     [HttpGet("AllImagesInfo")]
     public IActionResult GetAllImagesInfo()
     {
-        var images = _context.Images.Select(img => new { img.IdImage, img.FileName, img.ItemsCount }).ToList();
+        var images = _context.Images
+                .Select(img => new { 
+                    img.IdImage, 
+                    img.FileName, 
+                    img.ItemsCount,
+                    img.LastModified})
+                .ToList();
         return Ok(images);
     }
 
     // NOTA: una chiamata per immagine di item, il client sarà responsabile del caching
     // [Authorize]
     [HttpGet("ImageName/{itemImageName}")]
-    public IActionResult GetIImage(string itemImageName)
+    public IActionResult GetImageByName(string itemImageName)
     {
         // qui si costruisci il percorso interno al container
         // Questo cercherà PRIMA nei User Secrets, poi nelle variabili d'ambiente, poi nel JSON
@@ -50,7 +56,7 @@ public class ImagesController : ControllerBase
 
     //[Authenticate]
     [HttpGet("IdImage/{idImage}")]
-    public async Task<IActionResult> GetIImage(int idImage)
+    public async Task<IActionResult> GetImageById(int idImage)
     {
         // cerca l'id nella tabella e recupera il nome dell'immagine
         var image = await _context.Images.FindAsync(idImage);
@@ -79,10 +85,14 @@ public class ImagesController : ControllerBase
     }
 
     [HttpGet("ItemsCount/{qty}")]
-    public IActionResult GetIImage(int qty)
+    public IActionResult GetImagesByItemsCount(int qty)
     {
         var images = _context.Images
-            .Select(img => new { img.IdImage, img.FileName, img.ItemsCount })
+            .Select(img => new { 
+                img.IdImage, 
+                img.FileName, 
+                img.ItemsCount,
+                img.LastModified})
             .Where(img => img.ItemsCount <= qty)
             .ToList();
         return Ok(images);

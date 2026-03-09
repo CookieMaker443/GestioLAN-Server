@@ -63,18 +63,23 @@ public partial class GestioLanContext : DbContext
 
             entity.ToTable("items");
 
-            entity.Property(e => e.IdItem).HasColumnName("id_item");
-            entity.Property(e => e.Description)
-                .HasMaxLength(255)
-                .HasColumnName("description");
-            entity.Property(e => e.IdCategory).HasColumnName("id_category");
-            entity.Property(e => e.Image)
-                .HasMaxLength(64)
-                .HasColumnName("image");
+            entity.Property(e => e.IdItem)
+                .HasColumnName("id_item");
             entity.Property(e => e.ItemName)
                 .HasMaxLength(64)
                 .HasColumnName("item_name");
-            entity.Property(e => e.Quantity).HasColumnName("quantity");
+            entity.Property(e => e.Description)
+                .HasMaxLength(255)
+                .HasColumnName("description");
+            entity.Property(e => e.IdImage)
+                .HasColumnName("id_image");
+            entity.Property(e => e.ImageName)
+                .HasMaxLength(64)
+                .HasColumnName("image_name");
+            entity.Property(e => e.IdCategory)
+                .HasColumnName("id_category");
+            entity.Property(e => e.Quantity)
+                .HasColumnName("quantity");
             entity.Property(e => e.TypeQuantity)
                 .HasMaxLength(45)
                 .HasColumnName("type_quantity");

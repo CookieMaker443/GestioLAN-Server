@@ -13,6 +13,8 @@ public partial class Item
 
     public int? IdImage { get; set; }
 
+    public string? ImageName { get; set; }
+
     public int? IdCategory { get; set; }
 
     public int Quantity { get; set; }

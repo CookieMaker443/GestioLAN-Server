@@ -12,7 +12,6 @@ namespace csharpAPI.Controllers;
 [Route("api/[controller]")]
 public class ItemsController : ControllerBase
 {
-    ImagesController imagesController = new ImagesController(_context, _config);
     private readonly GestioLanContext _context;
     private readonly IConfiguration _config;
 

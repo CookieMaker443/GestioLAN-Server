@@ -21,22 +21,22 @@ public class ImagesController : ControllerBase
     }
 
     [HttpGet("AllImagesInfo")]
-    public IActionResult GetAllImagesInfo()
+    public async Task<IActionResult> GetAllImagesInfo()
     {
-        var images = _context.Images
+        var images = await _context.Images
                 .Select(img => new { 
                     img.IdImage, 
                     img.FileName, 
                     img.ItemsCount,
                     img.LastModified})
-                .ToList();
+                .ToListAsync();
         return Ok(images);
     }
 
     // NOTA: una chiamata per immagine di item, il client sarà responsabile del caching
     // [Authorize]
     [HttpGet("ImageName/{itemImageName}")]
-    public IActionResult GetImageByName(string itemImageName)
+    public async Task<IActionResult> GetImageByName(string itemImageName)
     {
         // qui si costruisci il percorso interno al container
         // Questo cercherà PRIMA nei User Secrets, poi nelle variabili d'ambiente, poi nel JSON
@@ -85,16 +85,16 @@ public class ImagesController : ControllerBase
     }
 
     [HttpGet("ItemsCount/{qty}")]
-    public IActionResult GetImagesByItemsCount(int qty)
+    public async Task<IActionResult> GetImagesByItemsCount(int qty)
     {
-        var images = _context.Images
+        var images = await _context.Images
             .Select(img => new { 
                 img.IdImage, 
                 img.FileName, 
                 img.ItemsCount,
                 img.LastModified})
             .Where(img => img.ItemsCount <= qty)
-            .ToList();
+            .ToListAsync();
         return Ok(images);
     }
 
@@ -116,15 +116,8 @@ public class ImagesController : ControllerBase
         }
 
         // Creazione del nome del file e il percorso completo
-        string fileName;
-        if (string.IsNullOrEmpty(itemName))
-        {
-            fileName = await UploadImage(baseFolder, file);
-        }
-        else
-        {
-            fileName = await UploadImage(itemName, baseFolder, file);
-        }
+        string fileName = await UploadImage(baseFolder, file, itemName ?? "unknown");
+        
         // Creazione del record nel database
         var newImage = new Image
         {
@@ -174,23 +167,19 @@ public class ImagesController : ControllerBase
         }
 
         // carica la nuova immagine e aggiorna il record;
-        string newFileName;
-        if (string.IsNullOrEmpty(itemName))
-        {
-            newFileName = await UploadImage(baseFolder, file);
-        } else {
-            newFileName = await UploadImage(itemName, baseFolder, file);
-        }
+        string newFileName = await UploadImage(baseFolder, file, itemName ?? "unknown");
+        
+        // salva il record con il nuovo nome dell'immagine
         imageRecord.FileName = newFileName;
-        _context.Images.Update(imageRecord);
-        await _context.SaveChangesAsync();
+        // _context.Images.Update(imageRecord); 
+        // ridondante perche ef lo traccia visto che è async, ed è tracciato dal "ChangeTracker" di ef
 
-        // OPZIONALE: cercare ogni item con idImage = a questo e aggiornare il nome immagine
-        var itemsWithThisImage = _context.Items.Where(item => item.IdImage == id).ToList();
+        // Cercare ogni item con idImage = a questo e aggiornare il nome immagine
+        var itemsWithThisImage = await _context.Items.Where(item => item.IdImage == id).ToListAsync();
         foreach(var item in itemsWithThisImage)        {
             // item.IdImage = id; // in realtà non cambia nulla
             item.ImageName = newFileName; // aggiorna il nome dell'immagine negli item che usano questa immagine
-            _context.Items.Update(item);
+            // _context.Items.Update(item); // sempre ridondadte perche la ricerca è asyncrona 
         }
         await _context.SaveChangesAsync();
 
@@ -209,32 +198,29 @@ public class ImagesController : ControllerBase
 
         // se il record esiste, costruisce il percorso del file e lo rinomina
         var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
+
         string oldFileName = imageRecord.FileName;
         var oldFilePath = Path.Combine(baseFolder, oldFileName);
-        string newFileName;
 
-        if (string.IsNullOrEmpty(itemName))
-        {
-            newFileName = GenerateUniqueFilename();
-        } else {
-            newFileName = GenerateUniqueFilename(itemName);
-        }
-        
+        string newFileName = GenerateUniqueFilename(itemName ?? "unknown"); // genera un nuovo nome basato sull'itemName o "unknown" se itemName è null o vuoto
         var newFilePath = Path.Combine(baseFolder, newFileName);
+
         if (System.IO.File.Exists(oldFilePath))
         {
             System.IO.File.Move(oldFilePath, newFilePath);
             Console.WriteLine($"rinominato: {oldFilePath} in {newFilePath}");
+            imageRecord.FileName = newFileName;
+            //_context.Images.Update(imageRecord);
         } else {
             Console.WriteLine($"file da rinominare non trovato: {oldFilePath}");
             return NotFound($"file da rinominare non trovato: {oldFilePath}");
         }
         // OPZIONALE: cercare ogni item con idImage = a questo e aggiornare il nome immagine
-        var itemsWithThisImage = _context.Items.Where(item => item.IdImage == id).ToList();
+        var itemsWithThisImage = await _context.Items.Where(item => item.IdImage == id).ToListAsync();
         foreach(var item in itemsWithThisImage)        {
             // item.IdImage = id; // in realtà non cambia nulla
             item.ImageName = newFileName; // aggiorna il nome dell'immagine negli item che usano questa immagine
-            _context.Items.Update(item);
+            // _context.Items.Update(item); // ridondanza perche asyncrona
         }
         await _context.SaveChangesAsync();
         return Ok(new { message = "Immagine rinominata con successo" });
@@ -260,54 +246,37 @@ public class ImagesController : ControllerBase
         } else {
             Console.WriteLine($"file da eliminare non trovato: {filePath}");
         }
-
-        // elimina il record
-        _context.Images.Remove(imageRecord);
-        await _context.SaveChangesAsync();
         
         // elimina ogni riferimento a questa immagine negli item (id_image = null)
-        var itemsWithThisImage = _context.Items.Where(item => item.IdImage == id).ToList();
+        var itemsWithThisImage = await _context.Items.Where(item => item.IdImage == id).ToListAsync();
         foreach(var item in itemsWithThisImage)        {
             item.IdImage = null;
-            _context.Items.Update(item);
+            item.ImageName = null;
+            //_context.Items.Update(item);
         }
+        // elimina il record
+        _context.Images.Remove(imageRecord);
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Immagine eliminata con successo" });
     }
 
-    private async Task<string> UploadImage(string itemName, string baseFolder, IFormFile file)
+    private async Task<string> UploadImage(string baseFolder, IFormFile file, string itemName = "unknown")
     {
-        string fileName = GenerateUniqueFilename(itemName); // Genera un nome unico basato sull'itemName
+        var fileName = GenerateUniqueFilename(itemName); // Genera un nome unico basato sull'itemName
         var newFilePath = Path.Combine(baseFolder, fileName);
 
         //Salviamo il file fisicamente (sovrascrive se esiste già)
         using (var stream = new FileStream(newFilePath, FileMode.Create))
         {
             await file.CopyToAsync(stream);
-            Console.WriteLine($"caricato: {newFilePath}");
+            Console.WriteLine($"caricato: {baseFolder}/{fileName}");
         }
 
         return fileName;
     }
 
-    private async Task<string> UploadImage(string baseFolder, IFormFile file)
-    {
-
-        var fileName = GenerateUniqueFilename(); // Genera un nome unico generico
-        var newFilePath = Path.Combine(baseFolder, fileName);
-
-        //Salviamo il file fisicamente (sovrascrive se esiste già)
-        using (var stream = new FileStream(newFilePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-            Console.WriteLine($"caricato: {newFilePath}");
-        }
-
-        return fileName;
-    }
-
-    private Task<string> GenerateUniqueFilename(string itemName)
+    private string GenerateUniqueFilename(string itemName = "unknown")
     {
         string itemNameSanitized = itemName.Replace(" ", "_"); // Sostituisce gli spazi con underscore
         string randStr = StringHelper.GenerateRandomString(8); // Genera una stringa casuale per evitare conflitti di nome
@@ -315,11 +284,4 @@ public class ImagesController : ControllerBase
         return fileName;
     }
 
-    private Task<string> GenerateUniqueFilename()
-    {
-        string itemName = "unknown"; // genera un nome generico
-        string randStr = StringHelper.GenerateRandomString(8); // Genera una stringa casuale per evitare conflitti di nome
-        var fileName = $"{randStr}_{itemName}.jpg"; // Forziamo .jpg come deciso
-        return fileName;
-    }
 }

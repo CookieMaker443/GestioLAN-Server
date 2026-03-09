@@ -20,9 +20,16 @@ public class ImagesController : ControllerBase
         _config = configuration;
     }
 
+    [HttpGet("AllImagesInfo")]
+    public IActionResult GetAllImagesInfo()
+    {
+        var images = _context.Images.Select(img => new { img.IdImage, img.FileName, img.ItemsCount }).ToList();
+        return Ok(images);
+    }
+
     // NOTA: una chiamata per immagine di item, il client sarà responsabile del caching
     // [Authorize]
-    [HttpGet("item/{itemImageName}")]
+    [HttpGet("ImageName/{itemImageName}")]
     public IActionResult GetIImage(string itemImageName)
     {
         // qui si costruisci il percorso interno al container
@@ -42,7 +49,7 @@ public class ImagesController : ControllerBase
     }
 
     //[Authenticate]
-    [HttpGet("item/{idImage}")]
+    [HttpGet("IdImage/{idImage}")]
     public async Task<IActionResult> GetIImage(int idImage)
     {
         // cerca l'id nella tabella e recupera il nome dell'immagine
@@ -71,9 +78,19 @@ public class ImagesController : ControllerBase
         return File(imageBytes, "image/jpeg"); // Il browser/client vedrà un file immagine
     }
 
+    [HttpGet("ItemsCount/{qty}")]
+    public IActionResult GetIImage(int qty)
+    {
+        var images = _context.Images
+            .Select(img => new { img.IdImage, img.FileName, img.ItemsCount })
+            .Where(img => img.ItemsCount <= qty)
+            .ToList();
+        return Ok(images);
+    }
+
     // [Authorize] 
-    [HttpPost("item/{id}")]
-    public async Task<IActionResult> CreateIImage(int id, string? itemName, IFormFile file)
+    [HttpPost("CreateImage")]
+    public async Task<IActionResult> CreateIImage(string? itemName, IFormFile file)
     {
 
         if (file == null || file.Length == 0){
@@ -89,18 +106,29 @@ public class ImagesController : ControllerBase
         }
 
         // Creazione del nome del file e il percorso completo
-        if (string.isNullOrEmpty(itemName))
+        string fileName;
+        if (string.IsNullOrEmpty(itemName))
         {
-            UploadImage(baseFolder, file);
+            fileName = await UploadImage(baseFolder, file);
         }
-        UploadImage(itemName, baseFolder, file);
+        else
+        {
+            fileName = await UploadImage(itemName, baseFolder, file);
+        }
+        // Creazione del record nel database
+        var newImage = new Image
+        {
+            FileName = fileName
+        };
+        _context.Images.Add(newImage);
+        await _context.SaveChangesAsync();
 
-        return Ok(new { message = "Immagine caricata con successo", url = $"/api/Items/image/{fileName}" });
+        return Ok(new { message = $"Immagine caricata con successo in: {baseFolder}/{fileName}" });
     }
 
     // Modifica un immagine
     // [Authorize] 
-    [HttpPut("item/{id}")]
+    [HttpPut("UpdateImage/{id}")]
     public async Task<IActionResult> UpdateIImage(int id, string? itemName, IFormFile file)
     {
 
@@ -136,19 +164,40 @@ public class ImagesController : ControllerBase
         }
 
         // carica la nuova immagine e aggiorna il record;
-        if (string.isNullOrEmpty(itemName))
+        string newFileName;
+        if (string.IsNullOrEmpty(itemName))
         {
-            UploadImage(baseFolder, file);
+            newFileName = await UploadImage(baseFolder, file);
+        } else {
+            newFileName = await UploadImage(itemName, baseFolder, file);
         }
-        UploadImage(itemName, baseFolder, file);
-        imageRecord.Filename = newFilePath;
+        imageRecord.FileName = newFileName;
+        _context.Images.Update(imageRecord);
+        await _context.SaveChangesAsync();
 
         // OPZIONALE: cercare ogni item con idImage = a questo e aggiornare il nome immagine
 
-        return Ok(new { message = "Immagine caricata con successo", url = $"/api/Items/image/{fileName}" });
+        return Ok(new { message = "Immagine caricata con successo"});
     }
 
-    private async Task<IActionResult> UploadImage(string itemName, string baseFolder, IFormFile file)
+    [HttpPut("RenameImage/{id}")]
+    public async Task<IActionResult> RenameIImage(int id, string? itemName, IFormFile file)
+    {
+        return null;
+    }
+
+    [HttpDelete("DeleteImage/{id}")]
+    public async Task<IActionResult> DeleteImage(int id, string? itemName, IFormFile file)
+    {
+        // Controlla se il record esiste
+        // se si
+        // legge il percorso di base e col nome preso dal record, elimina l immagine
+        // elimina il record
+        // elimina ogni riferimento a questa immagine negli item (id_image = null)
+        return null;
+    }
+
+    private async Task<string> UploadImage(string itemName, string baseFolder, IFormFile file)
     {
         string itemNameSanitized = itemName.Replace(" ", "_"); // Sostituisce gli spazi con underscore
         string randStr = StringHelper.GenerateRandomString(8); // Genera una stringa casuale per evitare conflitti di nome
@@ -161,9 +210,11 @@ public class ImagesController : ControllerBase
             await file.CopyToAsync(stream);
             Console.WriteLine($"caricato: {newFilePath}");
         }
+
+        return fileName;
     }
 
-    private async Task<IActionResult> UploadImage(string baseFolder, IFormFile file)
+    private async Task<string> UploadImage(string baseFolder, IFormFile file)
     {
 
         string itemName = "unknown"; // genera un nome generico
@@ -177,5 +228,7 @@ public class ImagesController : ControllerBase
             await file.CopyToAsync(stream);
             Console.WriteLine($"caricato: {newFilePath}");
         }
+
+        return fileName;
     }
 }

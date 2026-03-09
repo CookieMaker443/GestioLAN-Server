@@ -139,7 +139,7 @@ public class ImagesController : ControllerBase
     // Modifica un immagine
     // [Authorize] 
     [HttpPut("UpdateImage/{id}")]
-    public async Task<IActionResult> UpdateIImage(int id, string? itemName, IFormFile file)
+    public async Task<IActionResult> UpdateImage(int id, string? itemName, IFormFile file)
     {
 
         // Controlli generici:
@@ -186,32 +186,99 @@ public class ImagesController : ControllerBase
         await _context.SaveChangesAsync();
 
         // OPZIONALE: cercare ogni item con idImage = a questo e aggiornare il nome immagine
+        var itemsWithThisImage = _context.Items.Where(item => item.IdImage == id).ToList();
+        foreach(var item in itemsWithThisImage)        {
+            // item.IdImage = id; // in realtà non cambia nulla
+            item.ImageName = newFileName; // aggiorna il nome dell'immagine negli item che usano questa immagine
+            _context.Items.Update(item);
+        }
+        await _context.SaveChangesAsync();
 
         return Ok(new { message = "Immagine caricata con successo"});
     }
 
     [HttpPut("RenameImage/{id}")]
-    public async Task<IActionResult> RenameIImage(int id, string? itemName, IFormFile file)
+    public async Task<IActionResult> RenameImage(int id, string? itemName)
     {
-        return null;
+        // Controlli generici:
+        // Legge il percorso di base dalla configurazione (User Secrets o Environment)
+        var imageRecord = await _context.Images.FindAsync(id);
+        if(imageRecord == null)        {
+            return BadRequest("you cant update a record that does not exist!");
+        }
+
+        // se il record esiste, costruisce il percorso del file e lo rinomina
+        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
+        string oldFileName = imageRecord.FileName;
+        var oldFilePath = Path.Combine(baseFolder, oldFileName);
+        string newFileName;
+
+        if (string.IsNullOrEmpty(itemName))
+        {
+            newFileName = GenerateUniqueFilename();
+        } else {
+            newFileName = GenerateUniqueFilename(itemName);
+        }
+        
+        var newFilePath = Path.Combine(baseFolder, newFileName);
+        if (System.IO.File.Exists(oldFilePath))
+        {
+            System.IO.File.Move(oldFilePath, newFilePath);
+            Console.WriteLine($"rinominato: {oldFilePath} in {newFilePath}");
+        } else {
+            Console.WriteLine($"file da rinominare non trovato: {oldFilePath}");
+            return NotFound($"file da rinominare non trovato: {oldFilePath}");
+        }
+        // OPZIONALE: cercare ogni item con idImage = a questo e aggiornare il nome immagine
+        var itemsWithThisImage = _context.Items.Where(item => item.IdImage == id).ToList();
+        foreach(var item in itemsWithThisImage)        {
+            // item.IdImage = id; // in realtà non cambia nulla
+            item.ImageName = newFileName; // aggiorna il nome dell'immagine negli item che usano questa immagine
+            _context.Items.Update(item);
+        }
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Immagine rinominata con successo" });
     }
 
     [HttpDelete("DeleteImage/{id}")]
-    public async Task<IActionResult> DeleteImage(int id, string? itemName, IFormFile file)
+    public async Task<IActionResult> DeleteImage(int id)
     {
         // Controlla se il record esiste
-        // se si
-        // legge il percorso di base e col nome preso dal record, elimina l immagine
+        var imageRecord = await _context.Images.FindAsync(id);
+        if(imageRecord == null)        {
+            return BadRequest("you cant delete a record that does not exist!");
+        }    
+
+        // se si legge il percorso di base e col nome preso dal record, elimina l immagine
+        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
+        string itemImageName = imageRecord.FileName;
+        var filePath = Path.Combine(baseFolder, itemImageName);
+        if (System.IO.File.Exists(filePath))
+        {
+            System.IO.File.Delete(filePath);
+            Console.WriteLine($"eliminato: {filePath}");
+        } else {
+            Console.WriteLine($"file da eliminare non trovato: {filePath}");
+        }
+
         // elimina il record
+        _context.Images.Remove(imageRecord);
+        await _context.SaveChangesAsync();
+        
         // elimina ogni riferimento a questa immagine negli item (id_image = null)
-        return null;
+        var itemsWithThisImage = _context.Items.Where(item => item.IdImage == id).ToList();
+        foreach(var item in itemsWithThisImage)        {
+            item.IdImage = null;
+            _context.Items.Update(item);
+        }
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Immagine eliminata con successo" });
     }
 
     private async Task<string> UploadImage(string itemName, string baseFolder, IFormFile file)
     {
-        string itemNameSanitized = itemName.Replace(" ", "_"); // Sostituisce gli spazi con underscore
-        string randStr = StringHelper.GenerateRandomString(8); // Genera una stringa casuale per evitare conflitti di nome
-        var fileName = $"{randStr}_{itemNameSanitized}.jpg"; // Forziamo .jpg come deciso
+        string fileName = GenerateUniqueFilename(itemName); // Genera un nome unico basato sull'itemName
         var newFilePath = Path.Combine(baseFolder, fileName);
 
         //Salviamo il file fisicamente (sovrascrive se esiste già)
@@ -227,9 +294,7 @@ public class ImagesController : ControllerBase
     private async Task<string> UploadImage(string baseFolder, IFormFile file)
     {
 
-        string itemName = "unknown"; // genera un nome generico
-        string randStr = StringHelper.GenerateRandomString(8); // Genera una stringa casuale per evitare conflitti di nome
-        var fileName = $"{randStr}_{itemName}.jpg"; // Forziamo .jpg come deciso
+        var fileName = GenerateUniqueFilename(); // Genera un nome unico generico
         var newFilePath = Path.Combine(baseFolder, fileName);
 
         //Salviamo il file fisicamente (sovrascrive se esiste già)
@@ -239,6 +304,22 @@ public class ImagesController : ControllerBase
             Console.WriteLine($"caricato: {newFilePath}");
         }
 
+        return fileName;
+    }
+
+    private Task<string> GenerateUniqueFilename(string itemName)
+    {
+        string itemNameSanitized = itemName.Replace(" ", "_"); // Sostituisce gli spazi con underscore
+        string randStr = StringHelper.GenerateRandomString(8); // Genera una stringa casuale per evitare conflitti di nome
+        var fileName = $"{randStr}_{itemNameSanitized}.jpg"; // Forziamo .jpg come deciso
+        return fileName;
+    }
+
+    private Task<string> GenerateUniqueFilename()
+    {
+        string itemName = "unknown"; // genera un nome generico
+        string randStr = StringHelper.GenerateRandomString(8); // Genera una stringa casuale per evitare conflitti di nome
+        var fileName = $"{randStr}_{itemName}.jpg"; // Forziamo .jpg come deciso
         return fileName;
     }
 }

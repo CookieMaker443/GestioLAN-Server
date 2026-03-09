@@ -105,8 +105,40 @@ public partial class GestioLanContext : DbContext
                 .HasColumnName("username");
         });
 
+        modelBuilder.Entity<Image>(entity =>
+        {
+            entity.ToTable("images");
+            entity.HasKey(e => e.IdImage);
+            entity.Property(e => e.IdImage)
+                .HasColumnName("id_image");
+            entity.Property(e => e.FileName)
+                .HasColumnName("file_name")
+                .IsRequired();
+            entity.Property(e => e.ItemsCount)
+                .HasColumnName("items_count")
+                .HasDefaultValue(0);
+            entity.Property(e => e.LastModified)
+                .HasColumnName("last_modified")
+                .HasColumnType("timestamp")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Prima di salvare, cerca tutti i record Image modificati
+        var modifiedImages = ChangeTracker.Entries<Image>()
+            .Where(e => e.State == EntityState.Modified);
+
+        foreach (var entry in modifiedImages)
+        {
+            entry.Entity.LastModified = DateTime.UtcNow;
+        }
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
 }

@@ -27,7 +27,7 @@ namespace GestioLan.API.Migrations
             MySqlModelBuilderExtensions.HasCharSet(modelBuilder, "armscii8");
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("csharpAPI.Models.Category", b =>
+            modelBuilder.Entity("GestioLan.API.Models.Category", b =>
                 {
                     b.Property<int>("IdCategory")
                         .HasColumnType("int")
@@ -51,7 +51,7 @@ namespace GestioLan.API.Migrations
                         });
                 });
 
-            modelBuilder.Entity("csharpAPI.Models.Image", b =>
+            modelBuilder.Entity("GestioLan.API.Models.Image", b =>
                 {
                     b.Property<int>("IdImage")
                         .ValueGeneratedOnAdd()
@@ -82,7 +82,7 @@ namespace GestioLan.API.Migrations
                     b.ToTable("images", (string)null);
                 });
 
-            modelBuilder.Entity("csharpAPI.Models.Item", b =>
+            modelBuilder.Entity("GestioLan.API.Models.Item", b =>
                 {
                     b.Property<int>("IdItem")
                         .ValueGeneratedOnAdd()
@@ -130,7 +130,7 @@ namespace GestioLan.API.Migrations
                     b.ToTable("items", (string)null);
                 });
 
-            modelBuilder.Entity("csharpAPI.Models.User", b =>
+            modelBuilder.Entity("GestioLan.API.Models.User", b =>
                 {
                     b.Property<string>("Username")
                         .HasMaxLength(32)

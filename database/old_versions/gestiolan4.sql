@@ -47,22 +47,6 @@ CREATE TABLE `category` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `images`
---
-
-DROP TABLE IF EXISTS `images`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `images` (
-  `id_image` int(11) NOT NULL AUTO_INCREMENT,
-  `file_name` longtext NOT NULL,
-  `items_count` int(11) NOT NULL DEFAULT 0,
-  `last_modified` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id_image`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=armscii8 COLLATE=armscii8_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `items`
 --
 
@@ -73,11 +57,10 @@ CREATE TABLE `items` (
   `id_item` int(11) NOT NULL AUTO_INCREMENT,
   `item_name` varchar(64) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
-  `image_name` varchar(64) DEFAULT NULL,
+  `image` varchar(64) DEFAULT NULL,
   `id_category` int(11) DEFAULT NULL,
   `quantity` int(11) NOT NULL,
   `type_quantity` varchar(45) DEFAULT NULL,
-  `id_image` int(11) DEFAULT NULL,
   PRIMARY KEY (`id_item`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=armscii8 COLLATE=armscii8_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -108,4 +91,4 @@ CREATE TABLE `user` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-03-10 23:46:02
+-- Dump completed on 2026-03-08  0:18:16

@@ -36,5 +36,5 @@ jobs:
           platforms: linux/amd64,linux/arm64 # Specifica le piattaforme
           # Qui gestiamo le versioni
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/GestioLan.DATABASE:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/GestioLan.DATABASE:v1.0.${{ github.run_number }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/GestioLan.database:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/GestioLan.database:v1.0.${{ github.run_number }}

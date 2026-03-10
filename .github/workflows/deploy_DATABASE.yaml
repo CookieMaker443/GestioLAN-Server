@@ -30,7 +30,7 @@ jobs:
       - name: Build e Push con Versionamento
         uses: docker/build-push-action@v5
         with:
-          context: . # Cerca il Dockerfile partendo dalla root
+          context: ./database # Cerca il Dockerfile partendo dalla root
           file: database/Dockerfile # Percorso relativo del Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64 # Specifica le piattaforme

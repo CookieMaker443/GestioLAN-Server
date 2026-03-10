@@ -28,7 +28,7 @@ Per la JWT key, alla stessa maniera, o la passi in appsettings.json oppure ancor
 dotnet user-secrets set "JWT-Settings:key" "LaTuaKeyCreataConMinimo32Caratteri"
 ```
 
-successivamente, spostati nella cartella /src/csharpAPI ed esegui questo comando:
+successivamente, spostati nella cartella /src/GestioLan.API ed esegui questo comando:
 ```Bash
 dotnet run
 ```
@@ -65,7 +65,7 @@ personalmente mi trovo meglio a lavorare con docker usando i bind mount, per com
     ├── gestiolan/
     │   ├── uploads/items
     │   ├── uploads/users
-    │   ├── Containers_logs/gestiolan-api
+    │   ├── Containers_logs/GestioLan.API
     │   └── gestiolan-mysql
     └── *otherServices*/
         └── *otherStuff*/

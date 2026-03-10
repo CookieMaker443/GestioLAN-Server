@@ -1,6 +1,6 @@
 services:
   db:
-    image: mariadb:11.6 # IMMMAGINE DA CAMBIARE 
+    image: ${DOCKER_USER}/${DATABASE_IMAGE_NAME}:latest
     container_name: GestioLan-Database
     command: 
       - "--log-bin=mysql-bin"
@@ -27,7 +27,7 @@ services:
       retries: 5
 
   api:
-    image: ${DOCKER_USER}/${IMAGE_NAME}:latest
+    image: ${DOCKER_USER}/${API_IMAGE_NAME}:latest
     container_name: GestioLan.API
     restart: always
     ports:

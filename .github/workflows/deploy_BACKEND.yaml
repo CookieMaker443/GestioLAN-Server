@@ -30,8 +30,8 @@ jobs:
       - name: Build e Push con Versionamento
         uses: docker/build-push-action@v5
         with:
-          context: ./src/GestioLan.API # Cerca il Dockerfile partendo dalla root
-          file: src/GestioLan.API/Dockerfile # Percorso relativo del Dockerfile
+          context: ./src/GestioLan.API # Cerca il Dockerfile partendo dalla cartella src/GestioLan.API
+          file: ./src/GestioLan.API/Dockerfile # Percorso relativo del Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64 # Specifica le piattaforme
           # Qui gestiamo le versioni

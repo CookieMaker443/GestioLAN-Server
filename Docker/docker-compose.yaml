@@ -1,7 +1,7 @@
 services:
   db:
     image: ${DOCKER_USER}/${DATABASE_IMAGE_NAME}:latest
-    container_name: GestioLan-Database
+    container_name: GestioLan.Database
     command: 
       - "--log-bin=mysql-bin"
       - "--expire-logs-days=2"  # Cancella i log binari vecchi di 2 giorni
@@ -12,19 +12,21 @@ services:
       - MARIADB_DATABASE=${DB_NAME}
       - MARIADB_USER=${DB_USERNAME}
       - MARIADB_PASSWORD=${DB_PASSWORD}
+      # Per permettere connessioni da qualsiasi host, ma in produzione dovremo limitare questo
+      - MARIADB_USER_HOST=%
     volumes:
       - type: bind
-        source: /docker/services/gestiolan/gestiolan-mysql
+        source: ${RESOURCE_DEST_PATH}/gestiolan-mysql
         target: /var/lib/mysql
         # bind:
           # create_host_path: false
     networks:
       - gestionale_network
     healthcheck: # Per verificare che il database sia pronto prima di avviare l'API
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
 
   api:
     image: ${DOCKER_USER}/${API_IMAGE_NAME}:latest
@@ -37,21 +39,21 @@ services:
       - UPLOAD_PATH_USERS=/app/data/uploads/users
       - UPLOAD_PATH_ITEMS=/app/data/uploads/items
       - JWT-Settings__key=${JWT_KEY}
-      - ConnectionStrings__GestioLANConnection=Server=GestioLan-Database;Port=3306;Database=${DB_NAME};User Id=${DB_USERNAME};Password=${DB_PASSWORD};SslMode=none;
+      - ConnectionStrings__GestioLANConnection=Server=GestioLan.Database;Port=3306;Database=${DB_NAME};User Id=${DB_USERNAME};Password=${DB_PASSWORD};SslMode=none;
       - ASPNETCORE_ENVIRONMENT=Development # Per ora teniamo Development per vedere gli errori
     volumes:
       - type: bind
-        source: /docker/services/gestiolan/uploads/users
+        source: ${RESOURCE_DEST_PATH}/uploads/users
         target: /app/data/uploads/users
         # bind:
           # create_host_path: false
       - type: bind
-        source: /docker/services/gestiolan/uploads/items
+        source: ${RESOURCE_DEST_PATH}/uploads/items
         target: /app/data/uploads/items
         # bind:
           # create_host_path: false
       - type: bind
-        source: /docker/services/gestiolan/Containers_logs/GestioLan.API
+        source: ${RESOURCE_DEST_PATH}/logs
         target: /app/logs
         # bind:
           # create_host_path: false

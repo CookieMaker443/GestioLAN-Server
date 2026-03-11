@@ -14,6 +14,12 @@ services:
       - MARIADB_PASSWORD=${DB_PASSWORD}
       # Per permettere connessioni da qualsiasi host, ma in produzione dovremo limitare questo
       - MARIADB_USER_HOST=%
+    volumes:
+      - type: bind
+        source: ${RESOURCE_DEST_PATH}/test_builds/gestiolan-mysql
+        target: /var/lib/mysql
+        # bind:
+          # create_host_path: false
     networks: 
       - gestionale_network # Nome del network per api e db
     healthcheck: # Per verificare che il database sia pronto prima di avviare l'API
@@ -33,6 +39,22 @@ services:
       - JWT-Settings__key=${JWT-Key}
       - ConnectionStrings__GestioLANConnection=Server=database;Port=3306;Database=${DB_NAME};User Id=${DB_USERNAME};Password=${DB_PASSWORD};SslMode=none;
       - ASPNETCORE_ENVIRONMENT=Development # Per ora teniamo Development per vedere gli errori
+    volumes:
+      - type: bind
+        source: ${RESOURCE_DEST_PATH}/test_builds/uploads/users
+        target: /app/data/uploads/users
+        # bind:
+          # create_host_path: false
+      - type: bind
+        source: ${RESOURCE_DEST_PATH}/test_builds/uploads/items
+        target: /app/data/uploads/items
+        # bind:
+          # create_host_path: false
+      - type: bind
+        source: ${RESOURCE_DEST_PATH}/test_builds/logs
+        target: /app/logs
+        # bind:
+          # create_host_path: false
     networks: 
       - gestionale_network # Nome del network per api e db
     depends_on: # Per assicurarsi che il database sia avviato prima dell'API

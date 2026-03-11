@@ -1,10 +1,15 @@
 DOCKER_USER=cookiemaker443
-IMAGE_NAME=GestioLan.API
+API_IMAGE_NAME=gestiolan.api
+DATABASE_IMAGE_NAME=gestiolan.database
 IMAGE_TAG=latest
+# percorso assoluto della cartella dove voglio che vengano salvati i dati persistenti dei container
+RESOURCE_DEST_PATH=/docker/services
 
+DB_ROOT_PASSWORD=YourDBRootPassword
 DB_NAME=GestioLan
 DB_USERNAME= YourDBNonRootUsername
 DB_PASSWORD= YourDBNonRootPassword
+DB_PORT=3306
 JWT_KEY= KeyJWT
 PATH_USERS=/app/data/uploads/users
 PATH_ITEMS=/app/data/uploads/items

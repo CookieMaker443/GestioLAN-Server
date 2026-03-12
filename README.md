@@ -6,7 +6,7 @@
 Per collegarsi al database, ti serve la stringa di connessione, e si chiama `GestioLANConnection`
 Ti serve anche una JWT key e si chiama `JWT-Settings:key`
 
-*La cartella GestioLan-docs è possibile aprirla con Obsidian*
+*La cartella GestioLan-docs è possibile (e consigliato) aprirla con Obsidian*
 
 ## Senza Docker (Sconsigliato)
 Se l'API la esegui senza docker, ti serve creare la stringa di connessione e la JWT Key
@@ -45,7 +45,7 @@ localhost:5069/swagger/index.html
 
 Per usare il databse e l'api con docker basterà seguire questi step:
 - (Opzionale) copiare la cartella `GestioLan-docker` nella  directory che preferisci della macchina in cui gireranno i container
-- ntrare nella cartella `GestioLan-docker` e creare un file chiamato esattamente `.env`
+- Entrare nella cartella `GestioLan-docker` e creare un file chiamato esattamente `.env`
 - copiare in `.env` il contenuto di `ENV_template.txt` e sostituire i valori mancanti
 - aprire il terminale ed entrare nella cartella `GestioLan-docker`
 - scrivere nel terminale questo comando:
@@ -74,13 +74,11 @@ consiglio di usare la stessa struttura, anche perchè in questa maniera è piu c
 Altrimenti potete sempre modificare il file docker-compose.yaml e gestire i volumi come piu volete
 
 ## IMPORTANTE
-attualmente per come è costruita l'API, quando tirate su i container del db e dell'API, il container del database ancora non viene inizializzato in maniera tale da essere compatibile con l'api perche, quando viene creato, il container crea l'utente ma non crea il database compatibile con l'api
-
-nel prossimo futuro mi dedicherò a sistemare questa cosa, anche perchè facendo brainstorming con gemini ho scoperto che l'API può essere intelligente abbastanza da "correggere" il database se quando prova a connettersi lo trova senza le migration apportate
+normalmente i due container del database e dell api vengono aggiornati in maniera parallela per evitare di avere inconsistenze, se pero tuttavia, per qualche motivo particolare, decidete di usare l'api con container di mariadb totalmente vergine, se l'api è in modalita Developement, essa aggiornerà il database alle ultime migrazioni.
 
 ## Idee e futuro ##
 #### L'idea: ####
-Il database (in SQL) comunica con l'API (In C#, AspNetCore ed EntityFramework), essi idealmente si dovrebbero trovare su un server in LAN (un raspberry, un server dedicato, un vecchio portatile)
+Il database (in SQL) comunica con l'API (In C#, usando AspNetCore ed EntityFramework), l'idea è che essi si trovino su un server in LAN (un raspberry, un server dedicato, un vecchio portatile)
 
 I Client si connetteranno alla rete domestica e saranno in grado di comunicare con il database, e ricevere le informazioni contenute in esso!
 i client sono/saranno: 
@@ -103,6 +101,9 @@ Creare un MCP server come client,cosi da poter integrare delle interazioni con d
     - ( es: "consigliamo cosa preparare per cena usando gli alimenti che ho in casa" )
     - ( es: "stampa su un foglio la lista della spesa da fare")
 - INPUT: un LLM puo aggiungere in maniera smart, item nel database, passandogli lo scontrino della spesa, in modo da poter categorizzare gli oggetti nuovi e inserirli correttamente! 
+
+#### Idea per il futuro -2 ####
+creare anche una WebApp, mettendo la codebase in `GestioLan.frontend`, dentro `src`
 
 ## Versione ##
 Mariadb 11.6.0

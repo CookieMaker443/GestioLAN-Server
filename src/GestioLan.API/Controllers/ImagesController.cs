@@ -20,6 +20,7 @@ public class ImagesController : ControllerBase
         _config = configuration;
     }
 
+    [Authorize] // Protegge questo endpoint, richiede un token JWT valido per accedervi
     [HttpGet("AllImagesInfo")]
     public async Task<IActionResult> GetAllImagesInfo()
     {
@@ -34,7 +35,7 @@ public class ImagesController : ControllerBase
     }
 
     // NOTA: una chiamata per immagine di item, il client sarà responsabile del caching
-    // [Authorize]
+    [Authorize]
     [HttpGet("ImageName/{itemImageName}")]
     public async Task<IActionResult> GetImageByName(string itemImageName)
     {
@@ -54,7 +55,7 @@ public class ImagesController : ControllerBase
         return File(imageBytes, "image/jpeg"); // Il browser/client vedrà un file immagine
     }
 
-    //[Authenticate]
+    [Authorize]
     [HttpGet("IdImage/{idImage}")]
     public async Task<IActionResult> GetImageById(int idImage)
     {
@@ -84,6 +85,7 @@ public class ImagesController : ControllerBase
         return File(imageBytes, "image/jpeg"); // Il browser/client vedrà un file immagine
     }
 
+    [Authorize]
     [HttpGet("ItemsCount/{qty}")]
     public async Task<IActionResult> GetImagesByItemsCount(int qty)
     {
@@ -98,7 +100,7 @@ public class ImagesController : ControllerBase
         return Ok(images);
     }
 
-    // [Authorize] 
+    [Authorize] 
     [HttpPost("CreateImage")]
     public async Task<IActionResult> CreateIImage(string? itemName, IFormFile file)
     {
@@ -130,7 +132,7 @@ public class ImagesController : ControllerBase
     }
 
     // Modifica un immagine
-    // [Authorize] 
+    [Authorize] 
     [HttpPut("UpdateImage/{id}")]
     public async Task<IActionResult> UpdateImage(int id, string? itemName, IFormFile file)
     {
@@ -186,6 +188,7 @@ public class ImagesController : ControllerBase
         return Ok(new { message = "Immagine caricata con successo"});
     }
 
+    [Authorize]
     [HttpPut("RenameImage/{id}")]
     public async Task<IActionResult> RenameImage(int id, string? itemName)
     {
@@ -226,6 +229,7 @@ public class ImagesController : ControllerBase
         return Ok(new { message = "Immagine rinominata con successo" });
     }
 
+    [Authorize(Policy = "AdminOnly")]
     [HttpDelete("DeleteImage/{id}")]
     public async Task<IActionResult> DeleteImage(int id)
     {

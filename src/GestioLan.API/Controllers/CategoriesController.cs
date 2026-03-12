@@ -17,7 +17,7 @@ public class CategoriesController : ControllerBase
     }
 
     // GET category di debug
-    //[Authorize] // Protegge questo endpoint, richiede un token JWT valido per accedervi
+    [Authorize] // Protegge questo endpoint, richiede un token JWT valido per accedervi
     [HttpGet("AllCategories")]
     public async Task<ActionResult<IEnumerable<Category>>> GetAllCategories()
     {

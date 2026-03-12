@@ -92,7 +92,7 @@ public class UsersController : ControllerBase
         return Ok();
     }
 
-    //[Authorize(Policy = "AdminOnly")] // Solo gli admin possono accedere a questo endpoint
+    [Authorize(Policy = "AdminOnly")] // Solo gli admin possono accedere a questo endpoint
     [HttpDelete("DeleteUser")]
     public async Task<IActionResult> DeleteUser(string username)
     {
@@ -177,7 +177,7 @@ public class UsersController : ControllerBase
         return Ok(message);
     }
 
-    // [Authorize]
+    [Authorize]
     [HttpGet("image/{username}")]
     public IActionResult GetProfileImage(string username)
     {
@@ -217,7 +217,7 @@ public class UsersController : ControllerBase
         return File(imageBytes, "image/jpeg"); // Il browser/client vedrà un file immagine
     }
 
-    // [Authorize] 
+    [Authorize] 
     [HttpPost("image/{username}")]
     public async Task<IActionResult> UploadProfileImage(string username, IFormFile file)
     {

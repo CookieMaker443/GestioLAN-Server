@@ -1,0 +1,1 @@
+per provare gli endpoint con questi file .http, conviene creare una direcotory, copiare all'interno di essa i file presenti in questa directory e riempire le variabili dei token, con dei token validi per i test

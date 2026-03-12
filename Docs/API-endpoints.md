@@ -30,7 +30,9 @@ Da sistemare questi endpoint
 
 ## User endpoints:
 
+*eliminato*
 - *GET* */api/Users/AllUsers* [Authorize]
+
 - *POST* */api/Users/Login*
     - [FromBody] User loginUserData
 - *POST* */api/Users/Register*

@@ -15,4 +15,8 @@ quando il container si genera, deve:
 ## UserController
 - [ ] implementare un register, che registra senza token solo se non ci sono user, e crea il primo user admin
 - [ ] implementare il register "main" solo da un utente admin loggato
-- [ ] aggiungere un controllo in cui verifica che esiste almeno un admin nella lista
+- [ ] aggiungere un controllo in cui verifica che esiste almeno un admin nella listaù
+
+## ItemController
+- [ ] fare refactor degli endpoint dove possibile
+- [ ] creare i test in Items_test.http

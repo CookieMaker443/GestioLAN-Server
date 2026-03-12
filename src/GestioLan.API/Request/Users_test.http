@@ -1,0 +1,106 @@
+@host = http://192.168.1.250:5169
+@jwt_test_admin = 
+@jwt_test_user = 
+
+
+
+### POST per login 1
+POST {{host}}/api/Users/Login
+Content-Type: application/json
+
+{
+    "username": "test2",
+    "password": "test2"
+}
+
+### POST per login 2
+POST {{host}}/api/Users/Login
+Content-Type: application/json
+
+{
+  "username": "test3",
+  "email": "admin@test.com",
+  "password": "test3",
+  "isAdmin": true,
+  "createTime": "2026-03-12T11:57:27.781Z"
+}
+
+
+
+### POST per register 1
+POST {{host}}/api/Users/Register
+Content-Type: application/json
+
+{
+  "username": "test2",
+  "email": "",
+  "password": "test2"
+}
+
+### POST per register 2
+POST {{host}}/api/Users/Register
+Content-Type: application/json
+
+{
+  "username": "test3",
+  "email": "test3@gmail.com",
+  "password": "test3",
+  "isAdmin": true
+}
+
+
+
+### DELETE elimina utente (con utente admin)
+DELETE {{host}}/api/Users/DeleteUser?username=test3
+Authorization: Bearer {{jwt_test_admin}}
+
+### DELETE elimina utente (con utente non admin)
+DELETE {{host}}/api/Users/DeleteUser?username=test3
+Authorization: Bearer {{jwt_test_user}}
+
+
+
+### PUT aggiorna i dati dell utente, da non admin a non admin
+PUT {{host}}/api/Users/test2
+Content-Type: application/json
+Authorization: Bearer {{jwt_test_user}}
+
+{
+  "username": "test2",
+  "email": "test2_modified@gmail.com",
+  "password": "test2",
+  "isAdmin": true
+}
+
+### PUT aggiorna i dati dell utente, da admin a non admin
+PUT {{host}}/api/Users/test2
+Content-Type: application/json
+Authorization: Bearer {{jwt_test_admin}}
+
+{
+  "username": "test2",
+  "email": "test3@gmail.com",
+  "password": "test2",
+  "isAdmin": true
+}
+
+
+
+### GET immagine profilo utente
+GET {{host}}/api/Users/image/test2
+Authorization: Bearer {{jwt_test_user}}
+
+
+
+
+### POST carica immagine profilo utente
+POST {{host}}/api/Users/image/test2
+Authorization: Bearer {{jwt_test_user}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="spada.jpg"
+Content-Type: image/jpeg
+
+< ./spada.jpg
+--boundary--

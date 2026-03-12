@@ -105,7 +105,7 @@ public class UsersController : ControllerBase
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
 
-        return NoContent();
+        return Ok($"User {username} deleted successfully.");
     }
 
     // #TODO: Quando si aggiorna il proprio username, bisogna vedere ed eventualmente rinominare anche l immagine profilo

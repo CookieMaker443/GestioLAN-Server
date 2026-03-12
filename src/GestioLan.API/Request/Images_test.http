@@ -1,0 +1,62 @@
+@host = http://192.168.1.250:5169
+@jwt_test_admin = 
+@jwt_test_user = 
+
+### GET tutte le immagini
+GET {{host}}/api/Images/AllImagesInfo
+Accept: application/json
+Authorization: Bearer {{jwt_test_user}}
+
+### GET tutte le immagini
+GET {{host}}/api/Images/ImageName/QXKH1BM6_astolfo.jpg
+Accept: application/json
+Authorization: Bearer {{jwt_test_user}}
+
+### GET tutte le immagini
+GET {{host}}/api/Images/IdImage/6
+Accept: application/json
+Authorization: Bearer {{jwt_test_user}}
+
+### GET immagini per ItemsCount
+GET {{host}}/api/Images/ItemsCount/5
+Accept: application/json
+Authorization: Bearer {{jwt_test_user}}
+
+### POST carica nuova immagine (con nome)
+POST {{host}}/api/Images/CreateImage?itemName=spada
+Authorization: Bearer {{jwt_test_user}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="spada.jpg"
+Content-Type: image/jpeg
+
+< ./spada.jpg
+--boundary--
+
+### PUT aggiorna immagine
+PUT {{host}}/api/Images/UpdateImage/1?itemName=spadanuova
+Authorization: Bearer {{jwt_test_user}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="nuova.jpg"
+Content-Type: image/jpeg
+
+< ./nuova.jpg
+--boundary--
+
+### PUT rinomina immagine
+PUT {{host}}/api/Images/RenameImage/1?itemName=spadarinominata
+Accept: application/json
+Authorization: Bearer {{jwt_test_user}}
+
+### DELETE elimina immagine non admin
+DELETE {{host}}/api/Images/DeleteImage/1
+Accept: application/json
+Authorization: Bearer {{jwt_test_user}}
+
+### DELETE elimina immagine admin
+DELETE {{host}}/api/Images/DeleteImage/1
+Accept: application/json
+Authorization: Bearer {{jwt_test_admin}}

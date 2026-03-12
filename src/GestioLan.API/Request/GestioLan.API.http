@@ -1,0 +1,47 @@
+@host = http://localhost:5069
+
+### GET tutte le immagini
+GET {{host}}/api/Images/AllImagesInfo
+Accept: application/json
+
+### GET immagine per nome file
+GET {{host}}/api/Images/ImageName/abc123_spada.jpg
+Accept: application/json
+
+### GET immagine per ID
+GET {{host}}/api/Images/IdImage/1
+Accept: application/json
+
+### GET immagini per ItemsCount
+GET {{host}}/api/Images/ItemsCount/5
+Accept: application/json
+
+### POST carica nuova immagine (con nome)
+POST {{host}}/api/Images/CreateImage?itemName=spada
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="spada.jpg"
+Content-Type: image/jpeg
+
+< ./spada.jpg
+--boundary--
+
+### PUT aggiorna immagine
+PUT {{host}}/api/Images/UpdateImage/1?itemName=spadanuova
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="nuova.jpg"
+Content-Type: image/jpeg
+
+< ./nuova.jpg
+--boundary--
+
+### PUT rinomina immagine
+PUT {{host}}/api/Images/RenameImage/1?itemName=spadarinominata
+Accept: application/json
+
+### DELETE elimina immagine
+DELETE {{host}}/api/Images/DeleteImage/1
+Accept: application/json

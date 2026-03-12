@@ -1,0 +1,124 @@
+@host = http://192.168.1.250:5169
+@jwt_test_admin = 
+@jwt_test_user = 
+
+
+### Get di tutte le categorie
+GET {{host}}/api/Categories/AllCategories
+Authorization: Bearer {{jwt_test_admin}}
+Accept: application/json
+
+### 
+GET {{host}}/api/Categories/AllCategories
+Authorization: Bearer {{jwt_test_user}}
+Accept: application/json
+
+### 
+GET {{host}}/api/Categories/AllCategories
+Accept: application/json
+
+
+
+### POST aggiungi le categorie
+POST {{host}}/api/Categories/AddCategory
+Authorization: Bearer {{jwt_test_admin}}
+accept: text/plain
+Content-Type: application/json
+
+"Categoria di prova"
+
+### POST 
+POST {{host}}/api/Categories/AddCategory
+Authorization: Bearer {{jwt_test_user}}
+accept: text/plain
+Content-Type: application/json
+
+"Categoria di prova"
+
+### POST 
+POST {{host}}/api/Categories/AddCategory
+accept: text/plain
+Content-Type: application/json
+
+"Categoria di prova"
+
+
+### PUT aggiorna categoria
+PUT {{host}}/api/Categories/UpdateCategory/1
+Authorization: Bearer {{jwt_test_admin}}
+accept: text/plain
+Content-Type: application/json
+
+{
+  "idCategory": 1,
+  "nameCategory": "modificato"
+}
+
+### PUT 
+PUT {{host}}/api/Categories/UpdateCategory/1
+Authorization: Bearer {{jwt_test_user}}
+accept: text/plain
+Content-Type: application/json
+
+{
+  "idCategory": 1,
+  "nameCategory": "modificato"
+}
+
+### PUT 
+PUT {{host}}/api/Categories/UpdateCategory/1
+accept: text/plain
+Content-Type: application/json
+
+{
+  "idCategory": 1,
+  "nameCategory": "modificato"
+}
+
+### PUT aggiorna categoria
+PUT {{host}}/api/Categories/UpdateCategory/1
+Authorization: Bearer {{jwt_test_admin}}
+accept: text/plain
+Content-Type: application/json
+
+{
+  "idCategory": 2,
+  "nameCategory": "id_diversi"
+}
+
+### PUT 
+PUT {{host}}/api/Categories/UpdateCategory/1
+Authorization: Bearer {{jwt_test_user}}
+accept: text/plain
+Content-Type: application/json
+
+{
+  "idCategory": 2,
+  "nameCategory": "id_diversi"
+}
+
+### PUT 
+PUT {{host}}/api/Categories/UpdateCategory/1
+accept: text/plain
+Content-Type: application/json
+
+{
+  "idCategory": 2,
+  "nameCategory": "id_diversi"
+}
+
+
+
+### DELETE elimina categoria
+DELETE {{host}}/api/Categories/DeleteCategory/1
+Authorization: Bearer {{jwt_test_admin}}
+accept: text/plain
+
+### DELETE 
+DELETE {{host}}/api/Categories/DeleteCategory/1
+Authorization: Bearer {{jwt_test_user}}
+accept: text/plain
+
+### DELETE 
+DELETE {{host}}/api/Categories/DeleteCategory/1
+accept: text/plain

@@ -1,0 +1,3 @@
+@host = http://localhost:5069
+@jwt_test_admin = 
+@jwt_test_user = 

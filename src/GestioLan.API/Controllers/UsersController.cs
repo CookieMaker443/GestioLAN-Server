@@ -78,7 +78,7 @@ public class UsersController : ControllerBase
             Username = user.Username,
             Password = Hash.HashPassword(user.Password),
             Email = email,
-            IsAdmin = user.IsAdmin,
+            IsAdmin = user.IsAdmin ?? false, // Se IsAdmin è null, lo setta a false
             CreateTime = DateTime.Now
         };
 

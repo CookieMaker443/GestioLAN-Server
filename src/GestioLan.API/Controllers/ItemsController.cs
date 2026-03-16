@@ -24,6 +24,7 @@ public class ItemsController : ControllerBase
     [Authorize]
     [HttpGet("GetItems")]
     public async Task<ActionResult<IEnumerable<Item>>> GetItems(
+        [FromQuery] bool? has_category,
         [FromQuery] int? id_category,
         [FromQuery] string? name,
         [FromQuery] int? quantity,
@@ -32,10 +33,20 @@ public class ItemsController : ControllerBase
     {
         IQueryable<Item> query = _context.Items;
 
+        if (has_category.HasValue)
+        {
+            if (has_category.Value)
+                query = query.Where(item => item.IdCategory != null);
+            else
+                query = query.Where(item => item.IdCategory == null);
+        }
+        
         if (id_category.HasValue)
         {
             // controllare il WHERE per la bitmask
-            query = query.Where(item => (item.IdCategory & id_category.Value) != 0);
+            query = query.Where(item => 
+                        (item.IdCategory & id_category.Value) == id_category.Value && 
+                        item.IdCategory != null);
         }
 
         if (!string.IsNullOrEmpty(name))

@@ -27,6 +27,7 @@ public class ItemsController : ControllerBase
         [FromQuery] bool? has_category,
         [FromQuery] int? id_category,
         [FromQuery] string? name,
+        [FromQuery] bool? has_image,
         [FromQuery] int? quantity,
         [FromQuery] string? type_quantity
         )
@@ -40,7 +41,28 @@ public class ItemsController : ControllerBase
             else
                 query = query.Where(item => item.IdCategory == null);
         }
-        
+
+        if (id_category.HasValue)
+        {
+            // controllare il WHERE per la bitmask
+            query = query.Where(item => 
+                        (item.IdCategory & id_category.Value) == id_category.Value && 
+                        item.IdCategory != null);
+        }
+
+        if (!string.IsNullOrEmpty(name))
+        {
+            query = query.Where(item => item.ItemName.Contains(name));
+        }
+
+        if (has_image.HasValue)
+        {
+            if (has_image.Value)
+                query = query.Where(item => item.IdImage != null);
+            else
+                query = query.Where(item => item.IdImage == null);
+        }
+
         if (id_category.HasValue)
         {
             // controllare il WHERE per la bitmask
@@ -186,6 +208,12 @@ public class ItemsController : ControllerBase
             else
             {
                 // immagine specificata non esiste, pulisce i campi e avvisa
+                if (item.IdImage != null)
+                {
+                    var oldImage = await _context.Images.FindAsync(item.IdImage);
+                    if (oldImage != null)
+                        oldImage.ItemsCount--;
+                }
                 item.IdImage = null;
                 item.ImageName = null;
                 Console.WriteLine($"Immagine con id {updatedItem.IdImage} non trovata, item aggiornato senza immagine");

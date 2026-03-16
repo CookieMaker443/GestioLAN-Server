@@ -21,9 +21,10 @@ public class ItemsController : ControllerBase
     }
 
     // Ottiene tutti gli oggetti del DB
-    [HttpGet]
+    [Authorize]
+    [HttpGet("GetItems")]
     public async Task<ActionResult<IEnumerable<Item>>> GetItems(
-        [FromQuery] int id_category,
+        [FromQuery] int? id_category,
         [FromQuery] string? name,
         [FromQuery] int? quantity,
         [FromQuery] string? type_quantity
@@ -31,15 +32,10 @@ public class ItemsController : ControllerBase
     {
         IQueryable<Item> query = _context.Items;
 
-        /*
-        if (ids_category.Any())
-        {
-            query = query.Where(item => ids_category.Contains(item.IdCategory.Value));
-        }*/
-
-        if (id_category != 0)
+        if (id_category.HasValue)
         {
             // controllare il WHERE per la bitmask
+            query = query.Where(item => (item.IdCategory & id_category.Value) != 0);
         }
 
         if (!string.IsNullOrEmpty(name))
@@ -47,17 +43,18 @@ public class ItemsController : ControllerBase
             query = query.Where(item => item.ItemName.Contains(name));
         }
 
-        if (quantity.HasValue && !string.IsNullOrEmpty(type_quantity))
-        {
-            query = query.Where(item => item.Quantity == quantity.Value)
-                         .Where(item => item.TypeQuantity == type_quantity);
-        }
+        if (quantity.HasValue)
+            query = query.Where(item => item.Quantity == quantity.Value);
+
+        if (!string.IsNullOrEmpty(type_quantity))
+            query = query.Where(item => item.TypeQuantity == type_quantity);
 
         return await query.ToListAsync();
     }
 
     // Ottiene un singolo oggetto del DB tramite il suo ID    
-    [HttpGet("{id}")]
+    [Authorize]
+    [HttpGet("GetItems/{id}")]
     public async Task<ActionResult<Item>> GetItem(int id)
     {
         var item = await _context.Items.FindAsync(id);
@@ -69,40 +66,48 @@ public class ItemsController : ControllerBase
         return item;
     }
 
-    // Crea un nuovo oggetto nel DB
-    [HttpPost]
-    public async Task<ActionResult<IEnumerable<Item>>> PostItem(
-        string name, string? description, int? id_image, int[] ids_category, int quantity, string type_quantity)
+    [Authorize]
+    [HttpPost("CreateItem")]
+    public async Task<ActionResult<IEnumerable<Item>>> PostItem([FromBody] Item item)
     {
-        if(id_image == 0){
-            id_image = null;
+        if (item.IdImage == 0 || item.IdImage == null)
+        {
+            item.IdImage = null;
+            item.ImageName = null;
         }
 
-        int id_category = 0;
-        foreach (int id in ids_category)
+        // se  l'immagine dell item non è null, aggiorna il counter di quell'immagine
+        // se ha un'immagine, verifica che esista e aggiorna il contatore
+        if (item.IdImage != null)
         {
-            id_category |= (1 << id); // Imposta il bit corrispondente all'id della categoria
+            var image = await _context.Images.FindAsync(item.IdImage);
+            if (image == null)
+            {
+                // immagine specificata non esiste, pulisce i campi e avvisa
+                item.IdImage = null;
+                item.ImageName = null;
+                Console.WriteLine($"Immagine con id {item.IdImage} non trovata, item aggiunto senza immagine");
+            }
+            else
+            {
+                image.ItemsCount++;
+                item.ImageName = image.FileName;
+            }
         }
-
-        Item newItem = new Item
+        else
         {
-            ItemName = name,
-            Description = description,
-            IdImage = id_image,
-            IdCategory = id_category,
-            Quantity = quantity,
-            TypeQuantity = type_quantity
-        };
-
-        _context.Items.Add(newItem);
+            item.ImageName = null;
+        }
+        //aggiunge il nuovo oggetto al DB, con l'immmagine se è stata specificata
+        _context.Items.Add(item);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetItems), new { id = newItem.IdItem }, newItem);
+        return CreatedAtAction(nameof(GetItem), new { id = item.IdItem }, item);
     }
 
 
     [Authorize]
-    [HttpDelete("{id}")]
+    [HttpDelete("DeleteItem/{id}")]
     public async Task<ActionResult<IEnumerable<Item>>> DeleteItem(int id)
     {
         var item = await _context.Items.FindAsync(id);
@@ -111,65 +116,84 @@ public class ItemsController : ControllerBase
             return NotFound();
         }
 
+        var image = await _context.Images.FindAsync(item.IdImage);
+        if (image != null)
+        {
+            image.ItemsCount--;
+            // image.LastModified = DateTime.Now;
+        }
+
         _context.Items.Remove(item);
         await _context.SaveChangesAsync();
 
         return NoContent();
     }
 
-
-    [HttpPut("{id}")]
-    public async Task<IActionResult> PutItem(
-        int id, string name, string description, int? id_image,
-        int id_category, int quantity, string type_quantity, Item updatedItem)
-    {
-        if (id != updatedItem.IdItem)
-        {
-            return BadRequest("Id mismatch");
-        }
-
-        if(id_image == 0){
-            id_image = null;
-        }
-
-        updatedItem.ItemName = name;
-        updatedItem.Description = description;
-        updatedItem.IdImage = id_image;
-        updatedItem.IdCategory = id_category;
-        updatedItem.Quantity = quantity;
-        updatedItem.TypeQuantity = type_quantity;
-
-        _context.Entry(updatedItem).State = EntityState.Modified;
-
-        await _context.SaveChangesAsync();
-
-        return NoContent();
-    }
-
-    [HttpPut("test/{id}")]
+    [HttpPut("ModifyItem/{id}")]
     public async Task<IActionResult> PutItem(
         int id, Item updatedItem)
     {
-        
+
         if (id != updatedItem.IdItem)
         {
             return BadRequest("Id mismatch");
         }
 
         var item = await _context.Items.FindAsync(id);
-        if (item == null)        {
+        if (item == null)
+        {
             return NotFound();
         }
 
         item.ItemName = updatedItem.ItemName;
         item.Description = updatedItem.Description;
-        item.IdImage = updatedItem.IdImage;
+
         item.IdCategory = updatedItem.IdCategory;
         item.Quantity = updatedItem.Quantity;
         item.TypeQuantity = updatedItem.TypeQuantity;
 
+        // se il vecchio e nuovo item sono senza immagine, "pulisce" i campi immagine e non fa nulla
+        if ((item.IdImage != updatedItem.IdImage) && updatedItem.IdImage != null)
+        {    
+            var newImage = await _context.Images.FindAsync(updatedItem.IdImage);
+            if (newImage != null)
+            {
+                // abbassa contatore vecchia immagine
+                if (item.IdImage != null)
+                {
+                    var oldImage = await _context.Images.FindAsync(item.IdImage);
+                    if (oldImage != null)
+                        oldImage.ItemsCount--;
+                }
+
+                // aumenta contatore nuova immagine
+                newImage.ItemsCount++;
+                item.ImageName = newImage.FileName;
+                item.IdImage = updatedItem.IdImage;
+            } 
+            else
+            {
+                // immagine specificata non esiste, pulisce i campi e avvisa
+                item.IdImage = null;
+                item.ImageName = null;
+                Console.WriteLine($"Immagine con id {updatedItem.IdImage} non trovata, item aggiornato senza immagine");
+            }  
+        }
+        else if (updatedItem.IdImage == null)
+        // se il nuovo item è senza immagine, abbassa il contatore della vecchia immagine (se esiste) e pulisce i campi immagine senza fare query inutili
+        {
+            if (item.IdImage != null)
+            {
+                var oldImage = await _context.Images.FindAsync(item.IdImage);
+                if (oldImage != null)
+                    oldImage.ItemsCount--;
+            }
+            item.IdImage = null;
+            item.ImageName = null;
+        }
+
         await _context.SaveChangesAsync();
 
-        return NoContent();
+        return Ok("Item updated successfully");
     }
 }

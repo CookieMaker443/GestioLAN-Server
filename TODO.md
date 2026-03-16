@@ -20,3 +20,6 @@ quando il container si genera, deve:
 ## ItemController
 - [ ] fare refactor degli endpoint dove possibile
 - [ ] creare i test in Items_test.http
+
+## Client
+- [ ] il client, quando aggiunge un item, posta l'immagine, col return ottiene id e nome dell'immagine, loassegna all item e posta l'item

@@ -129,6 +129,7 @@ public class ItemsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize]
     [HttpPut("ModifyItem/{id}")]
     public async Task<IActionResult> PutItem(
         int id, Item updatedItem)

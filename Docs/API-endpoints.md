@@ -1,31 +1,20 @@
 ## Items endpoint:
-- *GET* */api/Items*
-    - [FromQuery] int[] ids_category
+- *GET* */api/Items* [Authorize]
+	- [FromQuery] bool? has_category
+    - [FromQuery] int? id_category
     - [FromQuery] string? name
+    - [FromQuery] bool? has_image
     - [FromQuery] int? quantity
     - [FromQuery] string? type_quantity
-- *GET* */api/Items/{id}*
+- *GET* */api/Items/{id}* [Authorize]
     - [FromURL] int id
-- *POST* */api/Items*
-    - [FromQuery] string name
-    - [FromQuery] string? description
-    - [FromQuery] string? image
-    - [FromQuery] int id_category
-    - [FromQuery] int quantity
-    - [FromQuery] string type_quantity
-- *DELETE* */api/Items/{id}*
+- *POST* */api/Items/CreateItem* [Authorize]
+    - [FromBody] Item item
+- *DELETE* */api/Items/DeleteItem/{id}* [Authorize]
     - [FromURL] int id
-- *PUT* */api/Items/{id}*
+- *PUT* */api/Items/ModifyItem/{id}* [Authorize]
     - [FromQuery] int id
-    - [FromQuery] string name
-    - [FromQuery] string description
-    - [FromQuery] string image
-    - [FromQuery] int id_category
-    - [FromQuery] int quantity
-    - [FromQuery] string type_quantity
-    - [FromBody] Item updatedItem
-
-Da sistemare questi endpoint
+    - [FromBody] Item item
 
 
 ## User endpoints:

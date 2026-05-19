@@ -13,3 +13,15 @@ DB_PORT=3306
 JWT_KEY= KeyJWT
 PATH_USERS=/app/data/uploads/users
 PATH_ITEMS=/app/data/uploads/items
+
+# AI
+AI__Provider=ollama
+AI__Endpoint=http://ollama:11434
+AI__Model=llama3
+AI__McpEndpoint=http://gestiolan-mcp:5100
+AI__ApiKey=I_love_m&m's
+
+# Rate Limiting
+RateLimiting__Default=100
+RateLimiting__AI=1
+RateLimiting__WindowMinutes=1

@@ -59,7 +59,7 @@ CREATE TABLE `images` (
   `items_count` int(11) NOT NULL DEFAULT 0,
   `last_modified` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id_image`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=armscii8 COLLATE=armscii8_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=armscii8 COLLATE=armscii8_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -73,13 +73,13 @@ CREATE TABLE `items` (
   `id_item` int(11) NOT NULL AUTO_INCREMENT,
   `item_name` varchar(64) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
+  `id_image` int(11) DEFAULT NULL,
   `image_name` varchar(64) DEFAULT NULL,
   `id_category` int(11) DEFAULT NULL,
   `quantity` int(11) NOT NULL,
   `type_quantity` varchar(45) DEFAULT NULL,
-  `id_image` int(11) DEFAULT NULL,
   PRIMARY KEY (`id_item`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=armscii8 COLLATE=armscii8_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=armscii8 COLLATE=armscii8_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

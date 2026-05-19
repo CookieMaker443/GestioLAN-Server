@@ -1,12 +1,14 @@
 services:
   database:
     build:
-      context: ./database
+      context: ../database
       dockerfile: Dockerfile
     container_name: GestioLAN-DB_TEST
-    ports:
-    # Per ora esponiamo la porta del database, ma in produzione non sarà così
-      - "3306:3306"
+    command: 
+      - "--log-bin=mysql-bin"
+      - "--expire-logs-days=2"  # Cancella i log binari vecchi di 2 giorni
+      - "--max-binlog-size=100M" # Non creare file binari più grandi di 100MB
+    restart: always
     environment:
       - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - MARIADB_DATABASE=${DB_NAME}
@@ -24,20 +26,23 @@ services:
       - gestionale_network # Nome del network per api e db
     healthcheck: # Per verificare che il database sia pronto prima di avviare l'API
       test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      interval: 10s
+      timeout: 10s
+      retries: 20
 
   api:
     build:
-      context: ./src/GestioLan.API
+      context: ../src/GestioLan.API
       dockerfile: Dockerfile
     container_name: GestioLan.API_TEST
     ports:
       - "5169:8080"
     environment:
-      - JWT-Settings__key=${JWT-Key}
-      - ConnectionStrings__GestioLANConnection=Server=database;Port=3306;Database=${DB_NAME};User Id=${DB_USERNAME};Password=${DB_PASSWORD};SslMode=none;
+      # Nota: Server=GestioLan-Database usa il nome del servizio definito sopra
+      - UPLOAD_PATH_USERS=/app/data/uploads/users
+      - UPLOAD_PATH_ITEMS=/app/data/uploads/items
+      - JWT-Settings__key=${JWT_KEY}
+      - ConnectionStrings__GestioLANConnection=Server=GestioLan.Database;Port=3306;Database=${DB_NAME};User Id=${DB_USERNAME};Password=${DB_PASSWORD};SslMode=none;
       - ASPNETCORE_ENVIRONMENT=Development # Per ora teniamo Development per vedere gli errori
     volumes:
       - type: bind
@@ -57,6 +62,11 @@ services:
           # create_host_path: false
     networks: 
       - gestionale_network # Nome del network per api e db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Massimo 10 Megabyte per file
+        max-file: "3"     # Tiene al massimo 3 file (totale 30MB)
     depends_on: # Per assicurarsi che il database sia avviato prima dell'API
       database:
         condition: service_healthy

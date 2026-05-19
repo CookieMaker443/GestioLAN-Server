@@ -1,3 +1,9 @@
+## Architettura repo
+- [ ] Refactorare la repo e l architettura del codice seguendo la mappa lavorata assieme a Claude per una migliore struttura e ciomprensione 
+- [ ] Aggiungere un rate limiting, (differenziandolo per l endpoint della AI)
+- [ ] implementare una chat con un LLM (potendolo cambiare)(come uno locale con Ollama o eventualente con Claude o OpenAI) e i suoi endopoint
+- [ ] aggiungere le interfacce come "layer" tra le classi controller e le API che riceveranno con DI (Dependency Injection) l'oggetto interfaccia (implementata dal con troller) per permettere dei test con controller (che non toccano il db ma usano l'interfaccia)
+
 ## Database
 quando il container si genera, deve:
 - [ ] eliminare l'utente root, o dargli una password complessa (da valutare)
@@ -20,6 +26,9 @@ quando il container si genera, deve:
 ## ItemController
 - [ ] fare refactor degli endpoint dove possibile
 - [X] creare i test in Items_test.http
+
+## CategoryController
+- [ ] Se un user toglie una categoria, il db trova gli item che hanno quella categoria, e toglie il bit di quella cat da essi
 
 ## Client
 - [ ] il client, quando aggiunge un item, posta l'immagine, col return ottiene id e nome dell'immagine, loassegna all item e posta l'item

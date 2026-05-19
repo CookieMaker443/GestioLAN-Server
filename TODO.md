@@ -16,16 +16,19 @@ quando il container si genera, deve:
 
 ## ImageController
 - [ ] aggiungere controli sul file, verificare che sia un immagine .png, .jpg
-- [ ] se è un immagine valida, convertirla in jpeg (facendo conversioni, non solo modificando i metadati)
+- [ ] se è un immagine valida, convertirla in jpeg (facendo conversioni, non solo modificando i metadati) se è caricata dall'utente
+- [ ] creare in src/GestioLan.API/Plugins un interfaccia per crreare pi dei puligin per i vari provideo esterni di immagini per le varie categorie usando il pattern `plugin`
+- [ ] fare una migazione anela tabella category, aggiungere uno (o piu, da vedere) elementi NULLABILI che sono i link delle api che fungeranno da provider per quegli item 
 
 ## UserController
 - [ ] implementare un register, che registra senza token solo se non ci sono user, e crea il primo user admin
 - [ ] implementare il register "main" solo da un utente admin loggato
-- [ ] aggiungere un controllo in cui verifica che esiste almeno un admin nella listaù
+- [ ] aggiungere un controllo in cui verifica che esiste almeno un admin nella lista
 
 ## ItemController
 - [ ] fare refactor degli endpoint dove possibile
 - [X] creare i test in Items_test.http
+- [ ] fare una migrazione e aggiungee ìunacolonna nullabile per dei barcode
 
 ## CategoryController
 - [ ] Se un user toglie una categoria, il db trova gli item che hanno quella categoria, e toglie il bit di quella cat da essi

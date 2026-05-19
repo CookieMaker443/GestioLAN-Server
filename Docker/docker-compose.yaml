@@ -36,9 +36,9 @@ services:
       - "5169:8080"
     environment:
       # Nota: Server=GestioLan-Database usa il nome del servizio definito sopra
-      - UPLOAD_PATH_USERS=/app/data/uploads/users
-      - UPLOAD_PATH_ITEMS=/app/data/uploads/items
-      - JWT-Settings__key=${JWT_KEY}
+      - Storage__UsersPath=${PATH_USERS}
+      - Storage__ItemsPath=${PATH_ITEMS}
+      - JwtSettings__Key=${JWT_KEY}
       - ConnectionStrings__GestioLANConnection=Server=GestioLan.Database;Port=3306;Database=${DB_NAME};User Id=${DB_USERNAME};Password=${DB_PASSWORD};SslMode=none;
       - ASPNETCORE_ENVIRONMENT=Development # Per ora teniamo Development per vedere gli errori
     volumes:

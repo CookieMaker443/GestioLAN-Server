@@ -16,7 +16,7 @@ public class JWT
 
     public string GenerateToken(User user)
     {
-        var jwtSecret = _conf["JWT-Settings:key"];
+        var jwtSecret = _conf["JwtSettings:Key"];
         var keyBytes = Encoding.ASCII.GetBytes(jwtSecret);
 
         var claims = new List<Claim>

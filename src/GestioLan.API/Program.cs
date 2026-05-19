@@ -36,7 +36,7 @@ builder.Services.AddDbContext<GestioLanContext>(options =>
 
 
 // sezione che gestisce il JWT
-var jwtSecret = builder.Configuration["JWT-Settings:key"];
+var jwtSecret = builder.Configuration["JwtSettings:Key"];
 if (string.IsNullOrEmpty(jwtSecret))
 {
     //Console.WriteLine("WARNING: JWT_SECRET is not set. Please set it in the environment variables or appsettings.json.");

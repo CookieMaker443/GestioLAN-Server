@@ -11,6 +11,8 @@ DB_USERNAME= YourDBNonRootUsername
 DB_PASSWORD= YourDBNonRootPassword
 DB_PORT=3306
 JWT_KEY= KeyJWT
+
+# Dentro il container
 PATH_USERS=/app/data/uploads/users
 PATH_ITEMS=/app/data/uploads/items
 

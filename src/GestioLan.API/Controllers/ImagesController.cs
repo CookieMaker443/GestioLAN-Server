@@ -12,12 +12,13 @@ namespace GestioLan.API.Controllers;
 public class ImagesController : ControllerBase
 {
     private readonly GestioLanContext _context;
-    private readonly IConfiguration _config;
+    private readonly string _itemsFolder;
     
-    public ImagesController(GestioLanContext context, IConfiguration configuration)
+    public ImagesController(GestioLanContext context, IConfiguration config)
     {
         _context = context;
-        _config = configuration;
+
+        _itemsFolder = config["Storage:ItemsPath"] ?? "/app/data/uploads/items";
     }
 
     [Authorize] // Protegge questo endpoint, richiede un token JWT valido per accedervi
@@ -41,8 +42,8 @@ public class ImagesController : ControllerBase
     {
         // qui si costruisci il percorso interno al container
         // Questo cercherà PRIMA nei User Secrets, poi nelle variabili d'ambiente, poi nel JSON
-        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
-        var filePath = Path.Combine(baseFolder, itemImageName);
+        // _itemsFolder
+        var filePath = Path.Combine(_itemsFolder, itemImageName);
 
         // 2. Controlla se il file esiste davvero
         if (!System.IO.File.Exists(filePath))
@@ -69,10 +70,7 @@ public class ImagesController : ControllerBase
         }
         string itemImageName = image.FileName;
 
-        // qui si costruisci il percorso interno al container
-        // Questo cercherà PRIMA nei User Secrets, poi nelle variabili d'ambiente, poi nel JSON
-        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
-        var filePath = Path.Combine(baseFolder, itemImageName);
+        var filePath = Path.Combine(_itemsFolder, itemImageName);
 
         // 2. Controlla se il file esiste davvero
         if (!System.IO.File.Exists(filePath))
@@ -108,17 +106,15 @@ public class ImagesController : ControllerBase
         if (file == null || file.Length == 0){
             return BadRequest("Nessun file selezionato.");
         }
-        // Legge il percorso di base dalla configurazione (User Secrets o Environment)
-        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
-
+        // prendo il percorso di base dalla configurazione (User Secrets o Environment)
         // Assicuriamo che la cartella esista
-        if (!Directory.Exists(baseFolder))
+        if (!Directory.Exists(_itemsFolder))
         {
-            Directory.CreateDirectory(baseFolder);
+            Directory.CreateDirectory(_itemsFolder);
         }
 
         // Creazione del nome del file e il percorso completo
-        string fileName = await UploadImage(baseFolder, file, itemName ?? "unknown");
+        string fileName = await UploadImage(_itemsFolder, file, itemName ?? "unknown");
         
         // Creazione del record nel database
         var newImage = new Image
@@ -128,7 +124,7 @@ public class ImagesController : ControllerBase
         _context.Images.Add(newImage);
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = $"Immagine caricata con successo in: {baseFolder}/{fileName}" });
+        return Ok(new { message = $"Immagine caricata con successo in: {_itemsFolder}/{fileName}" });
     }
 
     // Modifica un immagine
@@ -142,13 +138,11 @@ public class ImagesController : ControllerBase
         if (file == null || file.Length == 0){
             return BadRequest("Nessun file selezionato.");
         }
-        // Legge il percorso di base dalla configurazione (User Secrets o Environment)
-        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
 
-        // Assicuriamo che la cartella esista
-        if (!Directory.Exists(baseFolder))
+        // mi riassicuro che la cartella esista
+        if (!Directory.Exists(_itemsFolder))
         {
-            Directory.CreateDirectory(baseFolder);
+            Directory.CreateDirectory(_itemsFolder);
         }
 
         // vede se il record esiste
@@ -159,7 +153,7 @@ public class ImagesController : ControllerBase
         }
 
         string itemImageName = imageRecord.FileName;
-        var filePath = Path.Combine(baseFolder, itemImageName);
+        var filePath = Path.Combine(_itemsFolder, itemImageName);
 
         // cerca la vecchia immagine, controlla se il file esiste davvero, e nel caso lo elimina
         if (System.IO.File.Exists(filePath))
@@ -169,7 +163,7 @@ public class ImagesController : ControllerBase
         }
 
         // carica la nuova immagine e aggiorna il record;
-        string newFileName = await UploadImage(baseFolder, file, itemName ?? "unknown");
+        string newFileName = await UploadImage(_itemsFolder, file, itemName ?? "unknown");
         
         // salva il record con il nuovo nome dell'immagine
         imageRecord.FileName = newFileName;
@@ -199,14 +193,11 @@ public class ImagesController : ControllerBase
             return BadRequest("you cant update a record that does not exist!");
         }
 
-        // se il record esiste, costruisce il percorso del file e lo rinomina
-        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
-
         string oldFileName = imageRecord.FileName;
-        var oldFilePath = Path.Combine(baseFolder, oldFileName);
+        var oldFilePath = Path.Combine(_itemsFolder, oldFileName);
 
         string newFileName = GenerateUniqueFilename(itemName ?? "unknown"); // genera un nuovo nome basato sull'itemName o "unknown" se itemName è null o vuoto
-        var newFilePath = Path.Combine(baseFolder, newFileName);
+        var newFilePath = Path.Combine(_itemsFolder, newFileName);
 
         if (System.IO.File.Exists(oldFilePath))
         {
@@ -239,10 +230,8 @@ public class ImagesController : ControllerBase
             return BadRequest("you cant delete a record that does not exist!");
         }    
 
-        // se si legge il percorso di base e col nome preso dal record, elimina l immagine
-        var baseFolder = _config["UPLOAD_PATH_ITEMS"] ?? "/app/data/uploads/items";
         string itemImageName = imageRecord.FileName;
-        var filePath = Path.Combine(baseFolder, itemImageName);
+        var filePath = Path.Combine(_itemsFolder, itemImageName);
         if (System.IO.File.Exists(filePath))
         {
             System.IO.File.Delete(filePath);

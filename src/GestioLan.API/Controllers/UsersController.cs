@@ -14,12 +14,14 @@ public class UsersController : ControllerBase
     private readonly GestioLanContext _context;
     private readonly JWT _jwt;
     private readonly IConfiguration _config;
+    private readonly string _usersFolder;
 
     public UsersController(GestioLanContext context, JWT jwt, IConfiguration configuration)
     {
         _context = context;
         _jwt = jwt;
         _config = configuration;    // serve per accedere pooi agli user secret e alle variabili d ambiente, se necessario
+        _usersFolder = configuration["Storage:UsersPath"] ?? "/app/data/uploads/users";
     }
 
     // Login endpoint 
@@ -203,8 +205,7 @@ public class UsersController : ControllerBase
         //var baseFolder = Environment.GetEnvironmentVariable("UPLOAD_PATH_USERS") ?? "/app/data/uploads/users";
         
         // Questo cercherà PRIMA nei User Secrets, poi nelle variabili d'ambiente, poi nel JSON
-        var baseFolder = _config["UPLOAD_PATH_USERS"] ?? "/app/data/uploads/users";
-        var filePath = Path.Combine(baseFolder, $"{username}.jpg");
+        var filePath = Path.Combine(_usersFolder, $"{username}.jpg");
 
         // 2. Controlla se il file esiste davvero
         if (!System.IO.File.Exists(filePath))
@@ -235,18 +236,16 @@ public class UsersController : ControllerBase
         if (file == null || file.Length == 0){
             return BadRequest("Nessun file selezionato.");
         }
-        // Legge il percorso di base dalla configurazione (User Secrets o Environment)
-        var baseFolder = _config["UPLOAD_PATH_USERS"] ?? "/app/data/uploads/users";
 
         // Assicuriamo che la cartella esista
-        if (!Directory.Exists(baseFolder))
+        if (!Directory.Exists(_usersFolder))
         {
-            Directory.CreateDirectory(baseFolder);
+            Directory.CreateDirectory(_usersFolder);
         }
 
         // Creazione del nome del file e il percorso completo
         var fileName = $"{username}.jpg"; // Forziamo .jpg come deciso
-        var filePath = Path.Combine(baseFolder, fileName);
+        var filePath = Path.Combine(_usersFolder, fileName);
 
         // 4. Salviamo il file fisicamente (sovrascrive se esiste già)
         using (var stream = new FileStream(filePath, FileMode.Create))

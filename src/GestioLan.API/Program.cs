@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer; // Per JwtBearerDefaults
 using Microsoft.IdentityModel.Tokens; // Per TokenValidationParameters e SymmetricSecurityKey
 using GestioLan.API.Utils.JWT; // Per la classe JWT 
 using GestioLan.API.Services.Categories; // Per ICategoryService e CategoryService
+using GestioLan.API.Services.Images; // Per IImageService e ImageService
+
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +33,7 @@ builder.Services.AddControllers();
 
 // Registrazone dei servizi essenziali per i controller
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IImageService, ImageService>();
 
 // Connection String per il db
 var connectionString = builder.Configuration.GetConnectionString("GestioLANConnection");

@@ -1,8 +1,8 @@
 ## Architettura repo
-- [ ] Refactorare la repo e l architettura del codice seguendo la mappa lavorata assieme a Claude per una migliore struttura e ciomprensione 
+- [X] Refactorare la repo e l architettura del codice seguendo la mappa lavorata assieme a Claude per una migliore struttura e ciomprensione 
 - [ ] Aggiungere un rate limiting, (differenziandolo per l endpoint della AI)
 - [ ] implementare una chat con un LLM (potendolo cambiare)(come uno locale con Ollama o eventualente con Claude o OpenAI) e i suoi endopoint
-- [ ] aggiungere le interfacce come "layer" tra le classi controller e le API che riceveranno con DI (Dependency Injection) l'oggetto interfaccia (implementata dal con troller) per permettere dei test con controller (che non toccano il db ma usano l'interfaccia)
+- [ ] aggiungere le interfacce come "layer" tra le classi controller e le API che riceveranno con DI (Dependency Injection) l'oggetto interfaccia (implementata dal con troller) come service da Program.cs per permettere dei test con controller (che non toccano il db ma usano l'interfaccia)
 
 ## Database
 quando il container si genera, deve:
@@ -11,14 +11,16 @@ quando il container si genera, deve:
 *i dati sono opzionali*
 
 ## Docker compose
-- [ ] aggiornare i docker compose build per fare il bind mount
+- [ ] Migliorare la sicurezza dei container
+- [X] aggiornare i docker compose build per fare il bind mount
 - [X] aggiornare il docker compose che pulla le immagini, a pullare l immagine del database gia pronto (ancora da creare il container e da pubblicare)
 
 ## ImageController
-- [ ] aggiungere controli sul file, verificare che sia un immagine .png, .jpg
+- [ ] aggiungere controli sul file, verificare che sia un immagine .png, .jpg con i magic bytes
 - [ ] se è un immagine valida, convertirla in jpeg (facendo conversioni, non solo modificando i metadati) se è caricata dall'utente
 - [ ] creare in src/GestioLan.API/Plugins un interfaccia per crreare pi dei puligin per i vari provideo esterni di immagini per le varie categorie usando il pattern `plugin`
 - [ ] fare una migazione anela tabella category, aggiungere uno (o piu, da vedere) elementi NULLABILI che sono i link delle api che fungeranno da provider per quegli item 
+- [ ] se l'item ha un valore in "barcode" e ha una categoria associata ad un endpoint API per l'immagine, e l'utente manda un FLAG "TryFetchImage" (con o senza immagine dall'utente), il controller prova a fetchare l'immagine dall API
 
 ## UserController
 - [ ] implementare un register, che registra senza token solo se non ci sono user, e crea il primo user admin
@@ -26,7 +28,7 @@ quando il container si genera, deve:
 - [ ] aggiungere un controllo in cui verifica che esiste almeno un admin nella lista
 
 ## ItemController
-- [ ] fare refactor degli endpoint dove possibile
+- [X] fare refactor degli endpoint dove possibile
 - [X] creare i test in Items_test.http
 - [ ] fare una migrazione e aggiungee ìunacolonna nullabile per dei barcode
 

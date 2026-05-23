@@ -9,7 +9,7 @@ using Microsoft.IdentityModel.Tokens; // Per TokenValidationParameters e Symmetr
 using GestioLan.API.Utils.JWT; // Per la classe JWT 
 using GestioLan.API.Services.Categories; // Per ICategoryService e CategoryService
 using GestioLan.API.Services.Images; // Per IImageService e ImageService
-
+using GestioLan.API.Services.Users; // Per IUserService e UserService
 
 
 
@@ -34,6 +34,7 @@ builder.Services.AddControllers();
 // Registrazone dei servizi essenziali per i controller
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // Connection String per il db
 var connectionString = builder.Configuration.GetConnectionString("GestioLANConnection");

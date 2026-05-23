@@ -3,7 +3,7 @@
 --
 -- Host: 127.0.0.1    Database: GestioLAN
 -- ------------------------------------------------------
--- Server version	11.6.2-MariaDB-ubu2404
+-- Server version	11.6.2-MariaDB-ubu2404-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -34,7 +34,8 @@ INSERT INTO `__EFMigrationsHistory` VALUES
 ('20260225185952_AddBitmaskConstraint','9.0.11'),
 ('20260226165656_AddIsAdmin','9.0.11'),
 ('20260309124129_UpdateItemTable','9.0.11'),
-('20260309154700_ImageTableLastModified','9.0.11');
+('20260309154700_ImageTableLastModified','9.0.11'),
+('20260523215502_AddBarcodeColumn','9.0.11');
 /*!40000 ALTER TABLE `__EFMigrationsHistory` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -48,4 +49,4 @@ SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-03-10 23:46:25
+-- Dump completed on 2026-05-24  0:20:05

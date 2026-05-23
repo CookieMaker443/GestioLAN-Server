@@ -7,6 +7,12 @@ using System.Text; // Per Encoding
 using Microsoft.AspNetCore.Authentication.JwtBearer; // Per JwtBearerDefaults
 using Microsoft.IdentityModel.Tokens; // Per TokenValidationParameters e SymmetricSecurityKey
 using GestioLan.API.Utils.JWT; // Per la classe JWT 
+using GestioLan.API.Services.Categories; // Per ICategoryService e CategoryService
+using GestioLan.API.Services.Images; // Per IImageService e ImageService
+using GestioLan.API.Services.Users; // Per IUserService e UserService
+using GestioLan.API.Services.Items; // Per IItemService e ItemService
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +31,13 @@ builder.Host.UseSerilog(); // Dice all'API di usare Serilog
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+
+// Registrazone dei servizi essenziali per i controller
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IItemService, ItemService>();
+
 
 // Connection String per il db
 var connectionString = builder.Configuration.GetConnectionString("GestioLANConnection");

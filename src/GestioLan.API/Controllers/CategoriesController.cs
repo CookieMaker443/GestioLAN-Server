@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GestioLan.API.Models;
 using Microsoft.AspNetCore.Authorization; // Per l'attributo [Authorize]
+using GestioLan.API.Services.Categories;
 
 namespace GestioLan.API.Controllers;
 
@@ -9,11 +10,12 @@ namespace GestioLan.API.Controllers;
 [Route("api/[controller]")]
 public class CategoriesController : ControllerBase
 {
-    private readonly GestioLanContext _context;
+    private readonly ICategoryService _categoryService;
 
-    public CategoriesController(GestioLanContext context)
+    // Iniettiamo l'interfaccia del servizio, non più il DbContext direttamente
+    public CategoriesController(ICategoryService categoryService)
     {
-        _context = context;
+        _categoryService = categoryService;
     }
 
     // GET category di debug
@@ -21,7 +23,8 @@ public class CategoriesController : ControllerBase
     [HttpGet("AllCategories")]
     public async Task<ActionResult<IEnumerable<Category>>> GetAllCategories()
     {
-        return await _context.Categories.OrderBy(c => c.IdCategory).ToListAsync();
+        var categories = await _categoryService.GetAllCategoriesAsync();
+        return Ok(categories);
     }
 
     // inserisci una categoria
@@ -29,39 +32,27 @@ public class CategoriesController : ControllerBase
     [HttpPost("AddCategory")]
     public async Task<ActionResult<Category>> AddCategory([FromBody] string nome)
     {
-        // 1. Conta quanti record ci sono
-        var count = await _context.Categories.CountAsync();
-        if (count >= 31) return BadRequest("Limite massimo di 32 categorie raggiunto.");
-
-        // Controlla se esiste già una categoria con lo stesso nome
-        bool giaEsistente = await _context.Categories.AnyAsync(c => c.NameCategory == nome);
-        if (giaEsistente) return BadRequest("Categoria già esistente.");
-
-        // 2. trova  l'ultimo id_category usato piu alto
-        var maxId = await _context.Categories.MaxAsync(c => (int?)c.IdCategory) ?? 0;
-
-        // vede se esiste un "buco" nelle categorie (es. 1, 2, 8) e se si usare quel id_category invece di creare una nuova potenza di 2
-        var existingIds = await _context.Categories.Select(c => c.IdCategory).ToListAsync();
-        for (int i = 0; i < 32; i++)
+        if (string.IsNullOrWhiteSpace(nome))
         {
-            int potentialId = 1 << i; // Calcola la potenza di 2 (1, 2, 4, 8, 16, 32)
-            if (!existingIds.Contains(potentialId))
-            {
-                maxId = potentialId; // Usa il "buco" trovato
-                break;
-            }
+            return BadRequest("Il nome della categoria non può essere vuoto.");
         }
-        try 
-        {
-            var category = new Category { IdCategory = maxId, NameCategory = nome };
-            _context.Categories.Add(category);
-            await _context.SaveChangesAsync();
 
+        try
+        {
+            var category = await _categoryService.AddCategoryAsync(nome);
             return Ok(category);
         }
-        catch (DbUpdateException)
+        catch (ArgumentException ex)
         {
-            return BadRequest("Errore di validazione del Database (Bitmask non valida).");
+            return BadRequest(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
         }
     }
 
@@ -70,45 +61,22 @@ public class CategoriesController : ControllerBase
     [HttpPut("UpdateCategory/{id}")]
     public async Task<ActionResult<Category>> UpdateCategory(int id, Category category)
     {
-        // coontrolla se sono uguali
-        if (id != category.IdCategory)
+        try
         {
-            return BadRequest("L'ID nella URL non corrisponde all'ID nel corpo della richiesta.");
+            var resultMessage = await _categoryService.UpdateCategoryAsync(id, category);
+            return Ok(resultMessage);
         }
-
-        // Controlla se il nome della categoria è vuoto
-        if (string.IsNullOrEmpty(category.NameCategory))
+        catch (ArgumentException ex)
         {
-            return BadRequest("Il nome della categoria non può essere vuoto.");
+            return BadRequest(ex.Message);
         }
-
-        // Controlla se esiste già un'altra categoria con lo stesso nome
-        if(await _context.Categories.AnyAsync(c => c.NameCategory == category.NameCategory && c.IdCategory != id))
+        catch (KeyNotFoundException)
         {
-            return BadRequest("Esiste già una categoria con questo nome.");
+            return NotFound($"Categoria con ID {id} non trovata.");
         }
-
-        // Controlla se stai modificando la stessa risorsa con gli stessi dati
-        if(await _context.Categories.AnyAsync(c => c.NameCategory == category.NameCategory && c.IdCategory == id))
+        catch (Exception ex)
         {
-            return BadRequest("La categoria è già quella che stai cercando di modificare.");
-        }
-
-        // Controlla se la categoria esiste (se esiste, l'id dovrebbe essere valido, altrimenti restituirebbe NotFound)
-        var catInDb = await _context.Categories.FindAsync(id);
-        if (catInDb == null) { return NotFound(); }
-
-        string oldName = catInDb.NameCategory; // Salva il vecchio nome per il messaggio di risposta
-        catInDb.NameCategory = category.NameCategory;
-        try 
-        {
-            await _context.SaveChangesAsync();
-
-            return Ok($"Categoria `{id}` modificata da '{oldName}' a '{category.NameCategory}'");
-        }
-        catch (DbUpdateException)
-        {
-            return BadRequest("Errore di validazione del Database (Bitmask non valida).");
+            return BadRequest(ex.Message);
         }
     }
 
@@ -117,22 +85,18 @@ public class CategoriesController : ControllerBase
     [HttpDelete("DeleteCategory/{id}")]
     public async Task<ActionResult<Category>> DeleteCategory(int id)
     {
-        var category = await _context.Categories.FindAsync(id);
-        if (category == null)
+        try
         {
-            return NotFound();
+            var deletedCategory = await _categoryService.DeleteCategoryAsync(id);
+            return Ok(deletedCategory);
         }
-
-        var prodToUpdate = _context.Items.Where( p => (p.IdCategory & category.IdCategory) != 0).ToList();
-        foreach (var prod in prodToUpdate)
+        catch (KeyNotFoundException)
         {
-            prod.IdCategory = prod.IdCategory & ~category.IdCategory; // Rimuove la categoria usando un AND con il complemento
+            return NotFound($"Categoria con ID {id} non trovata.");
         }
-
-
-        _context.Categories.Remove(category);
-        await _context.SaveChangesAsync();
-
-        return category;
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Deve corrispondere al framework usato dall'API -->
+    <TargetFramework>net8.0</TargetFramework>
+    
+    <!-- Abilita i controlli severi sui Nullable (per evitare i warning che vedevi prima) -->
+    <Nullable>enable</Nullable>
+    
+    <!-- Abilita le nuove funzionalità del compilatore C# 12 -->
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

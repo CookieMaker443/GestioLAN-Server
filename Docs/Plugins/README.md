@@ -13,7 +13,7 @@ Questo modulo definisce un'architettura a plugin estensibile per il software, pr
 
 Il sistema si basa su un'architettura disaccoppiata in cui il core del software non conosce i dettagli implementativi delle singole API esterne.
 
-* **`src/Plugins/shared.csproj`**: Un modulo indipendente che funge da contratto comune. Contiene le interfacce che ogni plugin deve implementare.
+* **`src/Plugins/Shared/Plugins.Shared.csproj`**: Un modulo indipendente che funge da contratto comune. Contiene le interfacce che ogni plugin deve implementare.
 * **Plugin Custom (`.dll`)**: Librerie di classi separate che implementano l'interfaccia di core, compilate e inserite in una cartella specifica per essere caricate a runtime.
 
 ### Logica di Automazione (Bitmask & Categorie)
@@ -21,7 +21,7 @@ Il sistema si basa su un'architettura disaccoppiata in cui il core del software 
 Il database gestisce l'associazione tra le categorie dei prodotti e i provider API tramite una **bitmask** (maschera di bit).
 
 * Ogni categoria ha una colonna dedicata che specifica quale API provider è associato.
-* Quando viene inserito un nuovo articolo nel sistema, il software verifica la bitmask della categoria assegnata e avvia automaticamente il processo di fetching dell'immagine dal provider corrispondente usando il codice a barre.
+* Quando viene inserito un nuovo articolo nel sistema, il software verifica la bitmask della categoria assegnata e avvia automaticamente il processo di fetching dell'immagine dal provider corrispondente usando il codice searchKey.
 
 ---
 
@@ -31,25 +31,24 @@ Il database gestisce l'associazione tra le categorie dei prodotti e i provider A
 
 Tutti i plugin custom devono implementare questa interfaccia definita nel modulo `shared`.
 
-#### `getImageName()`
+#### `DownloadImageAsync(string searchKey)`
 
-* **Descrizione:** Definisce la logica di fetching verso l'API esterna utilizzando il codice a barre per recuperare l'immagine e restituisce il nome del file o la stringa identificativa dell'immagine recuperata.
-* **Firma:** `string getImageName();`
+* **Descrizione:** Definisce la logica di fetching verso l'API esterna utilizzando il codice a barre (o altra keyword) per recuperare l'immagine e restituisce il nome del file o la stringa identificativa dell'immagine recuperata.
 * **Valore di ritorno:** `string` — Il nome dell'immagine o l'identificativo restituito dall'API del provider.
 
-> ⚠️ Note: La firma del metodo indicata nei requisiti (`string getImageName();`) non accetta parametri in ingresso. Per poter effettuare il fetching tramite codice a barre, si assume che il barcode debba essere iniettato nel costruttore della classe che implementa il plugin, oppure che l'interfaccia reale preveda un parametro (es. `string getImageName(string barcode);`).
+* **ProviderName** dovrà essere il nome da inserire nella tabella sql associato al rispettivo bit della bitmask
 
 ---
 
 ## Installation & Setup
 
 1. **Riferimento all'interfaccia:** Fase di sviluppo.
-Creare un nuovo progetto di libreria di classi in C#. Scaricare il pacchetto NuGet ufficiale del modulo `shared` (se disponibile) oppure includere direttamente il file sorgente `IMetadataProvider.cs` come dipendenza.
+Creare un nuovo progetto di libreria di classi in C#. Scaricare il pacchetto NuGet ufficiale del modulo `shared` (ancora non disponibile) oppure includere direttamente il file sorgente `IMetadataProvider.cs` come dipendenza.
 
 
 2. **Implementazione del codice:** Fase di sviluppo.
-Creare una classe pubblica che implementi `IMetadataProvider` e sviluppare la logica di chiamata HTTP verso l'API del provider scelto all'interno del metodo `getImageName()`.
-
+Creare una classe pubblica che implementi `IMetadataProvider` e sviluppare la logica di chiamata HTTP verso l'API del provider scelto .
+le classi dovranno essere self-contained.
 
 3. **Compilazione:** Fase di sviluppo.
 Compilare il progetto in modalità *Release* per generare il file binario `.dll` del plugin custom.
@@ -72,10 +71,14 @@ docker compose restart
 ```
 
 ### Opzione B: Installazione Manuale (Senza Docker)
-1. Copiare la `.dll` del plugin direttamente nella cartella `Plugins` situata nella directory di esecuzione del software.
-2. Riavviare il processo dell'applicazione. Al boot, il sistema eseguirà la scansione della cartella tramite **Reflection** e caricherà il plugin in memoria.
+1. in `src/GestioLan.API` creare una cartella `plugins`
+2. Copiare la `.dll` del plugin direttamente nella cartella `src/GestioLan.API/plugins` situata nella directory di esecuzione del software.
+3. Riavviare il processo dell'applicazione. Al boot, il sistema eseguirà la scansione della cartella tramite **Reflection** e caricherà il plugin in memoria.
 
 ---
+
+## Linking
+Per linkare un plugin alla rispettiva categoria, bastera usare la rispettiva API per ottenere la lista di Plugins disponibili, e per aggiungerli nella tabella delle categorie (fatto a mano)
 
 ## Configuration
 
@@ -92,4 +95,3 @@ Nelle impostazioni di sistema è presente un flag di configurazione per gestire 
 *   **Meccanismo di Specularità:** Poiché il caricamento avviene tramite Reflection, assicurarsi che le classi dei plugin siano marcate come `public` e abbiano un costruttore pubblico senza parametri (o compatibile con l'Inversion of Control del core) per evitare fallimenti durante il boot.
 *   **Prestazioni al boot:** Un numero elevato di DLL nella cartella Plugins potrebbe rallentare leggermente i tempi di avvio dell'applicazione a causa del tempo di scansione dell'assembly.
 
-```

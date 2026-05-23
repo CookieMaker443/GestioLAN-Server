@@ -10,6 +10,7 @@ using GestioLan.API.Utils.JWT; // Per la classe JWT
 using GestioLan.API.Services.Categories; // Per ICategoryService e CategoryService
 using GestioLan.API.Services.Images; // Per IImageService e ImageService
 using GestioLan.API.Services.Users; // Per IUserService e UserService
+using GestioLan.API.Services.Items; // Per IItemService e ItemService
 
 
 
@@ -35,6 +36,8 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IItemService, ItemService>();
+
 
 // Connection String per il db
 var connectionString = builder.Configuration.GetConnectionString("GestioLANConnection");

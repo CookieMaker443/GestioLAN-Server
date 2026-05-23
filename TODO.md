@@ -2,7 +2,7 @@
 - [X] Refactorare la repo e l architettura del codice seguendo la mappa lavorata assieme a Claude per una migliore struttura e ciomprensione 
 - [ ] Aggiungere un rate limiting, (differenziandolo per l endpoint della AI)
 - [ ] implementare una chat con un LLM (potendolo cambiare)(come uno locale con Ollama o eventualente con Claude o OpenAI) e i suoi endopoint
-- [ ] aggiungere le interfacce come "layer" tra le classi controller e le API che riceveranno con DI (Dependency Injection) l'oggetto interfaccia (implementata dal con troller) come service da Program.cs per permettere dei test con controller (che non toccano il db ma usano l'interfaccia)
+- [X] aggiungere le interfacce come "layer" tra le classi controller e le API che riceveranno con DI (Dependency Injection) l'oggetto interfaccia (implementata dal con troller) come service da Program.cs per permettere dei test con controller (che non toccano il db ma usano l'interfaccia)
 
 ## Database
 quando il container si genera, deve:

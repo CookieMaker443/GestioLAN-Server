@@ -104,6 +104,35 @@ public class ItemService : IItemService
             item.ImageName = null;
         }
 
+        /* pseudocodice
+        if item.barcode != null
+        try{
+            // se ce il barcode devo capire se è un barcode di cibo o di un altra categoria
+
+            if(item.category != null)
+            // se ce la  categoria (che è una bitmask) devo capire quale categoria ha, e se nelcaso quella categoria ha un provider associato
+            (openfooddacts per cibo o un altra api peraltro tipo ardiuino), devo passargli questa istanza specifica, ltrimenti passa null
+
+            IMetadataProvider provider = istanzaPassata (in qualche modo)
+
+            if provider == null
+            return 
+
+            IFormFile image = provider.GetImage(); 
+            string imageToAd = provider.GetImageName(item.barcode);
+            
+            // aggiunge limmagine e tiene il riferimento dell immagine in modo da poterlo salvare nell item
+            var riferimentoImmagine = _context.ImageController.GetImageId(imageToAdd);
+
+            item.idImage = riferimentoImmagine.id;
+            item.imageName = riferimentoImmagine.name;
+        } catch (Exception ex)
+        {
+            // se c'è un errore con il provider, logga l'errore e continua ad aggiungere l'item senza immagine
+            Console.WriteLine($"Errore con il provider per il barcode {item.barcode}: {ex.Message}");
+        }
+        */
+
         // aggiunge il nuovo oggetto al DB, con l'immagine se è stata specificata
         _context.Items.Add(item);
         await _context.SaveChangesAsync();

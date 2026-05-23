@@ -20,4 +20,6 @@ public partial class Item
     public int Quantity { get; set; }
 
     public string? TypeQuantity { get; set; }
+
+    public string? Barcode { get; set; }
 }

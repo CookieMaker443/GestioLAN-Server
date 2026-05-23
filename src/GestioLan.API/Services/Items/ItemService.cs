@@ -1,15 +1,24 @@
 using Microsoft.EntityFrameworkCore;
 using GestioLan.API.Models;
+using GestioLan.API.Services.Metadata;
 
 namespace GestioLan.API.Services.Items;
 
 public class ItemService : IItemService
 {
     private readonly GestioLanContext _context;
+    private readonly IMetadataService _metadataService;
+    private readonly bool _apiOverrideMetadata;
 
-    public ItemService(GestioLanContext context)
+
+    public ItemService(GestioLanContext context, IMetadataService metadataService, IConfiguration config)
     {
         _context = context;
+       _metadataService = metadataService;
+
+    _apiOverrideMetadata = config.GetValue<bool>("Metadata:ApiOverrideMetadata");
+
+
     }
 
     // Ottiene tutti gli oggetti del DB con filtri opzionali
@@ -104,34 +113,43 @@ public class ItemService : IItemService
             item.ImageName = null;
         }
 
-        /* pseudocodice
-        if item.barcode != null
-        try{
-            // se ce il barcode devo capire se è un barcode di cibo o di un altra categoria
-
-            if(item.category != null)
-            // se ce la  categoria (che è una bitmask) devo capire quale categoria ha, e se nelcaso quella categoria ha un provider associato
-            (openfooddacts per cibo o un altra api peraltro tipo ardiuino), devo passargli questa istanza specifica, ltrimenti passa null
-
-            IMetadataProvider provider = istanzaPassata (in qualche modo)
-
-            if provider == null
-            return 
-
-            IFormFile image = provider.GetImage(); 
-            string imageToAd = provider.GetImageName(item.barcode);
-            
-            // aggiunge limmagine e tiene il riferimento dell immagine in modo da poterlo salvare nell item
-            var riferimentoImmagine = _context.ImageController.GetImageId(imageToAdd);
-
-            item.idImage = riferimentoImmagine.id;
-            item.imageName = riferimentoImmagine.name;
-        } catch (Exception ex)
+        // vede se è possibile fetchare lì'immagine da provider esterni
+        if (!string.IsNullOrEmpty(item.Barcode) && item.IdCategory != null)
         {
-            // se c'è un errore con il provider, logga l'errore e continua ad aggiungere l'item senza immagine
-            Console.WriteLine($"Errore con il provider per il barcode {item.barcode}: {ex.Message}");
+            bool userHasImage = item.IdImage != null;
+            bool shouldFetch = _apiOverrideMetadata || !userHasImage;
+        
+            if (shouldFetch)
+            {
+                int? fetchedImageId = await _metadataService.FetchAndSaveImageAsync(
+                    searchKey: item.Barcode,
+                    idCategory: item.IdCategory,
+                    itemName: item.ItemName);
+        
+                if (fetchedImageId != null)
+                {
+                    // Se c'era già un'immagine manuale e il plugin la sovrascrive,
+                    // abbassa il contatore della vecchia prima di sostituirla
+                    if (userHasImage && _apiOverrideMetadata)
+                    {
+                        var oldImage = await _context.Images.FindAsync(item.IdImage);
+                        if (oldImage != null)
+                            oldImage.ItemsCount--;
+                    }
+        
+                    var fetchedImage = await _context.Images.FindAsync(fetchedImageId);
+                    if (fetchedImage != null)
+                    {
+                        fetchedImage.ItemsCount++;
+                        item.IdImage = fetchedImage.IdImage;
+                        item.ImageName = fetchedImage.FileName;
+                    }
+                }
+                // Se fetchedImageId è null e l'utente aveva messo un'immagine manuale,
+                // non si tocca nulla — item.IdImage è già valorizzato correttamente
+            }
         }
-        */
+
 
         // aggiunge il nuovo oggetto al DB, con l'immagine se è stata specificata
         _context.Items.Add(item);

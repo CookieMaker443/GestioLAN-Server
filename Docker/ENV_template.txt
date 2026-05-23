@@ -11,10 +11,12 @@ DB_USERNAME= YourDBNonRootUsername
 DB_PASSWORD= YourDBNonRootPassword
 DB_PORT=3306
 JWT_KEY= KeyJWT
+Metadata__ApiOverrideMetadata=false
 
 # Dentro il container
 PATH_USERS=/app/data/uploads/users
 PATH_ITEMS=/app/data/uploads/items
+PATH_PLUGINS=/app/plugins
 
 # AI
 AI__Provider=ollama

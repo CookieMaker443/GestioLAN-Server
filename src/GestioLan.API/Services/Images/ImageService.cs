@@ -269,6 +269,33 @@ public class ImageService : IImageService
         return "Immagine eliminata con successo";
     }
 
+    // Salva un'immagine da uno Stream (usato dai plugin del MetadataService, non dal controller)
+    // Restituisce l'IdImage del record creato nel DB
+    public async Task<int> SaveImageFromStreamAsync(Stream imageStream, string suggestedExtension, string? itemName )
+    {
+        if (!Directory.Exists(_itemsFolder))
+            Directory.CreateDirectory(_itemsFolder);
+
+        // Riusa GenerateUniqueFilename per coerenza — se itemName è null usa "unknown"
+        // Poi sostituisce l'estensione con quella suggerita dal plugin (es. ".png", ".webp")
+        string baseName = GenerateUniqueFilename(itemName ?? "unknown");           // es. "aB3xKq1z_coca_cola.jpg"
+        string fileName = Path.ChangeExtension(baseName, suggestedExtension);      // es. "aB3xKq1z_coca_cola.png"
+
+        var filePath = Path.Combine(_itemsFolder, fileName);
+
+        using (var fileStream = new FileStream(filePath, FileMode.Create))
+        {
+            await imageStream.CopyToAsync(fileStream);
+            Console.WriteLine($"[ImageService] Immagine plugin salvata: {filePath}");
+        }
+
+        var newImage = new Image { FileName = fileName };
+        _context.Images.Add(newImage);
+        await _context.SaveChangesAsync();
+
+        return newImage.IdImage;
+    }
+
     // --- Metodi privati di supporto ---
 
     private async Task<string> UploadImage(string baseFolder, IFormFile file, string itemName = "unknown")

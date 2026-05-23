@@ -41,5 +41,7 @@ public interface IImageService
     // Restituisce il messaggio di conferma
     // Lancia KeyNotFoundException se il record non esiste
     Task<string> DeleteImageAsync(int id);
+
+    Task<int> SaveImageFromStreamAsync(Stream imageStream, string suggestedExtension, string? itemName);
 }
  

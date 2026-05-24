@@ -1,28 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using GestioLan.API.Models;
-using GestioLan.API.Utils.Hash;
-using GestioLan.API.Utils.JWT; // Per la classe JWT
-using Microsoft.AspNetCore.Authorization; // Per l'attributo [Authorize]
-
+using GestioLan.API.Services.Users;
+using Microsoft.AspNetCore.Authorization;
+ 
 namespace GestioLan.API.Controllers;
-
+ 
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private readonly GestioLanContext _context;
-    private readonly JWT _jwt;
-    private readonly IConfiguration _config;
-    private readonly string _usersFolder;
-
-    public UsersController(GestioLanContext context, JWT jwt, IConfiguration configuration)
+    private readonly IUserService _userService;
+ 
+    public UsersController(IUserService userService)
     {
-        _context = context;
-        _jwt = jwt;
-        _config = configuration;    // serve per accedere pooi agli user secret e alle variabili d ambiente, se necessario
-        _usersFolder = configuration["Storage:UsersPath"] ?? "/app/data/uploads/users";
+        _userService = userService;
     }
+
 
     // Login endpoint 
     [HttpPost("Login")]
@@ -30,33 +23,21 @@ public class UsersController : ControllerBase
         [FromBody] User loginUserdata
     )
     {
-        // Primo controllo sui dati ricevuti
-        if (loginUserdata == null || string.IsNullOrEmpty(loginUserdata.Username) || string.IsNullOrEmpty(loginUserdata.Password))
+        try
         {
-            return BadRequest("Username and password are required.");
+            var (user, token) = await _userService.LoginAsync(loginUserdata);
+            return Ok(new { User = user, Token = token });
         }
-
-        // Cerca l'utente nel database
-        var user = await _context.Users
-            .Where(u => u.Username == loginUserdata.Username)
-            .FirstOrDefaultAsync();
-
-        // se l'utente non esiste, o se la password non corrisponde, ritorna errore
-        if (user == null || !Hash.VerifyPassword(loginUserdata.Password, user.Password))
+        catch (ArgumentException ex)
         {
-            return Unauthorized("Invalid username or password.");
+            return BadRequest(ex.Message);
         }
-
-        // Ritorna i dati dell'utente senza la password
-        user.Password = ""; // Rimuove la password prima di ritornare l'oggetto
-        string token = _jwt.GenerateToken(user);
-        
-        return Ok(new { 
-            User = user, 
-            Token = token 
-            }
-        );
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
     }
+
 
     // Crea un nuovo utente
     [HttpPost("Register")]
@@ -64,51 +45,33 @@ public class UsersController : ControllerBase
         [FromBody] User user
     )
     {
-        // Controlla se l'username esiste già
-        bool giaEsistente = await _context.Users
-            .AnyAsync(u => u.Username == user.Username);
-
-        if (giaEsistente)
+        try
         {
-            return BadRequest("Username already exists"); ;
+            await _userService.RegisterAsync(user);
+            return Ok();
         }
-
-        // aggiunge il nuovo utente
-        string email = string.IsNullOrEmpty(user.Email) ? null : user.Email; // Se l'email è vuota, la setta a null
-        User newUser = new User
+        catch (InvalidOperationException ex)
         {
-            Username = user.Username,
-            Password = Hash.HashPassword(user.Password),
-            Email = email,
-            IsAdmin = user.IsAdmin ?? false, // Se IsAdmin è null, lo setta a false
-            CreateTime = DateTime.Now
-        };
-
-        if (await _context.Users.CountAsync() == 0)
-        {
-            newUser.IsAdmin = true; // Se è il primo utente, lo setta come admin
+            return BadRequest(ex.Message);
         }
-
-        _context.Users.Add(newUser);
-        await _context.SaveChangesAsync();
-        return Ok();
     }
+
 
     [Authorize(Policy = "AdminOnly")] // Solo gli admin possono accedere a questo endpoint
     [HttpDelete("DeleteUser")]
     public async Task<IActionResult> DeleteUser(string username)
     {
-        var user = await _context.Users.FindAsync(username);
-        if (user == null)
+        try
+        {
+            await _userService.DeleteUserAsync(username);
+            return Ok($"User {username} deleted successfully.");
+        }
+        catch (KeyNotFoundException)
         {
             return NotFound();
         }
-
-        _context.Users.Remove(user);
-        await _context.SaveChangesAsync();
-
-        return Ok($"User {username} deleted successfully.");
     }
+
 
     // #TODO: Quando si aggiorna il proprio username, bisogna vedere ed eventualmente rinominare anche l immagine profilo
     [Authorize]
@@ -118,141 +81,71 @@ public class UsersController : ControllerBase
     {
         var currentUsername = User.Identity?.Name;
         var currentUserIsAdmin = User.FindFirst("isAdmin")?.Value == "true";
-        string message = "";
-        message += $"Current user: {currentUsername}, Target user: {targetUsername}, IsAdmin: {currentUserIsAdmin}\n";
-
-        // Autorizzazione: puoi procedere solo se sei l'interessato O sei un Admin
-        if (currentUsername != targetUsername && !currentUserIsAdmin)
+ 
+        try
         {
-            return Forbid("You are not authorized to update this user's data.");
+            var message = await _userService.UpdateUserAsync(targetUsername, newUser, currentUsername, currentUserIsAdmin);
+            return Ok(message);
         }
-
-        var user = await _context.Users.FindAsync(targetUsername);
-        if (user == null) return NotFound("Utente non trovato.");
-
-        if(user.Email == newUser.Email)
-            {
-                message += "Email is equal, no update needed.\n";
-            }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(newUser.Email))
-                {
-                    user.Email = null; // Se l'email è vuota, la setta a null
-                    message += "Email set to null.\n";
-                }
-                else{
-                    user.Email = newUser.Email;
-                    message += "Email updated.\n";
-                }
-            }
-
-        if(Hash.HashPassword(newUser.Password) == user.Password || string.IsNullOrEmpty(newUser.Password))
+        catch (UnauthorizedAccessException ex)
         {
-            message += "Password is equal, no update needed.\n";
+            return Forbid(ex.Message);
         }
-        else
+        catch (KeyNotFoundException ex)
         {
-            user.Password = Hash.HashPassword(newUser.Password);
-            message += "Password updated.\n";
+            return NotFound(ex.Message);
         }
-
-        if (currentUserIsAdmin)
-        {
-            if (user.IsAdmin != newUser.IsAdmin)
-            {
-                user.IsAdmin = newUser.IsAdmin;
-                message += "IsAdmin updated.\n";
-            }
-            else
-            {
-                message += "IsAdmin is equal, no update needed.\n";
-            }
-        }
-        else
-        {
-            message += "You are not an Admin, you cannot change the IsAdmin flag.\n";
-        }
-
-        await _context.SaveChangesAsync();
-
-        return Ok(message);
     }
+
 
     [Authorize]
     [HttpGet("image/{username}")]
-    public IActionResult GetProfileImage(string username)
+    public async Task<IActionResult> GetProfileImage(string username)
     {
-        //var currentUsername = User.Identity?.Name;
-        //var currentUserIsAdmin = User.FindFirst("isAdmin")?.Value == "true";
-        var currentUsername = username; // TEST
-        var currentUserIsAdmin = true; // TEST
+        var currentUsername = User.Identity?.Name;
+        var currentUserIsAdmin = User.FindFirst("isAdmin")?.Value == "true";
 
+ 
         // Autorizzazione: puoi procedere solo se sei l'interessato O sei un Admin
         if (currentUsername != username && !currentUserIsAdmin)
         {
             return Forbid("You are not authorized to update this user's data.");
         }
-        // qui si costruisci il percorso interno al container
-
-        // percorso per il server: /app/data/uploads/users/{username}.jpg
-        //var filePath = Path.Combine("/", "app", "data", "uploads", "users", $"{username}.jpg");
-        
-        // Quest crea il percorso per lo sviluppo locale: home/cookie/Docker/services/MariaDb11.6/volumes/images/users
-        //var filePath = Path.Combine("/", "home", "cookie", "Docker", "services", "MariaDb11.6", "volumes", "images", "users", $"{username}.jpg");
-
-        // Questo cerca nelle variabili d'ambiente, se non trova niente usa il percorso di default (quello usato nel docker-compose)
-        //var baseFolder = Environment.GetEnvironmentVariable("UPLOAD_PATH_USERS") ?? "/app/data/uploads/users";
-        
-        // Questo cercherà PRIMA nei User Secrets, poi nelle variabili d'ambiente, poi nel JSON
-        var filePath = Path.Combine(_usersFolder, $"{username}.jpg");
-
-        // 2. Controlla se il file esiste davvero
-        if (!System.IO.File.Exists(filePath))
+ 
+        try
         {
-            return NotFound($"Cercato in: {filePath}");
+            var imageBytes = await _userService.GetProfileImageAsync(username);
+            return File(imageBytes, "image/jpeg"); // Il browser/client vedrà un file immagine
         }
-
-        // 3. Leggi il file e sputa fuori i byte
-        var imageBytes = System.IO.File.ReadAllBytes(filePath);
-        return File(imageBytes, "image/jpeg"); // Il browser/client vedrà un file immagine
+        catch (FileNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
+
 
     [Authorize] 
     [HttpPost("image/{username}")]
     public async Task<IActionResult> UploadProfileImage(string username, IFormFile file)
     {
-        //var currentUsername = User.Identity?.Name;
-        //var currentUserIsAdmin = User.FindFirst("isAdmin")?.Value == "true";
-        var currentUsername = username; // TEST
-        var currentUserIsAdmin = true; // TEST
-
+        var currentUsername = User.Identity?.Name;
+        var currentUserIsAdmin = User.FindFirst("isAdmin")?.Value == "true";
+ 
         // Autorizzazione: puoi procedere solo se sei l'interessato O sei un Admin
         if (currentUsername != username && !currentUserIsAdmin)
         {
             return Forbid("You are not authorized to update this user's data.");
         }
-
-        if (file == null || file.Length == 0){
-            return BadRequest("Nessun file selezionato.");
-        }
-
-        // Assicuriamo che la cartella esista
-        if (!Directory.Exists(_usersFolder))
+ 
+        try
         {
-            Directory.CreateDirectory(_usersFolder);
+            var url = await _userService.UploadProfileImageAsync(username, file);
+            return Ok(new { message = "Immagine caricata con successo", url });
         }
-
-        // Creazione del nome del file e il percorso completo
-        var fileName = $"{username}.jpg"; // Forziamo .jpg come deciso
-        var filePath = Path.Combine(_usersFolder, fileName);
-
-        // 4. Salviamo il file fisicamente (sovrascrive se esiste già)
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        catch (ArgumentException ex)
         {
-            await file.CopyToAsync(stream);
+            return BadRequest(ex.Message);
         }
-
-        return Ok(new { message = "Immagine caricata con successo", url = $"/api/Users/image/{username}" });
     }
+
 }

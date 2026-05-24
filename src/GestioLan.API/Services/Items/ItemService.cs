@@ -85,7 +85,7 @@ public class ItemService : IItemService
     public async Task<Item> CreateItemAsync(Item item)
     {
         bool userHasImage = false;
-        image? image = null;
+        Image? image = null;
         if (item.IdImage == 0 || item.IdImage == null)
         {
             item.IdImage = null;

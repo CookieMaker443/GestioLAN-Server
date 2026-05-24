@@ -14,11 +14,11 @@
   </PropertyGroup>
   <!-- Riferimento al progetto condiviso con l'interfaccia -->
   <ItemGroup>
-    <ProjectReference Include="..\..\Shared\Plugin.Shared.csproj" />
+    <ProjectReference Include="..\Shared\Plugins.Shared.csproj" />
   </ItemGroup>
 
   <!-- HttpClient è già in net8, ma se usi Newtonsoft o System.Text.Json esplicito: -->
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="8.0.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 </Project>

@@ -278,8 +278,7 @@ public class ImageService : IImageService
 
         // Riusa GenerateUniqueFilename per coerenza — se itemName è null usa "unknown"
         // Poi sostituisce l'estensione con quella suggerita dal plugin (es. ".png", ".webp")
-        string baseName = GenerateUniqueFilename(itemName ?? "unknown");           // es. "aB3xKq1z_coca_cola.jpg"
-        string fileName = Path.ChangeExtension(baseName, suggestedExtension);      // es. "aB3xKq1z_coca_cola.png"
+        string fileName = GenerateUniqueFilename(itemName ?? "unknown", suggestedExtension ?? ".jpg");           // es. "aB3xKq1z_coca_cola.jpg"
 
         var filePath = Path.Combine(_itemsFolder, fileName);
 
@@ -313,11 +312,11 @@ public class ImageService : IImageService
         return fileName;
     }
 
-    private string GenerateUniqueFilename(string itemName = "unknown")
+    private string GenerateUniqueFilename(string itemName = "unknown", string extension = ".jpg")
     {
         string itemNameSanitized = itemName.Replace(" ", "_"); // Sostituisce gli spazi con underscore
         string randStr = StringHelper.GenerateRandomString(8); // Genera una stringa casuale per evitare conflitti di nome
-        var fileName = $"{randStr}_{itemNameSanitized}.jpg"; // Forziamo .jpg come deciso
+        var fileName = $"{randStr}_{itemNameSanitized}{extension}"; // Forziamo .jpg come deciso
         return fileName;
     }
 }

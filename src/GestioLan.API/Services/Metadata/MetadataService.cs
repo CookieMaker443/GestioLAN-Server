@@ -126,8 +126,8 @@ public class MetadataService : IMetadataService
             // Trovata — salva e restituisce subito senza provare gli altri
             int savedImageId = await _imageService.SaveImageFromStreamAsync(
                                 result.ImageStream, 
-                                itemName,               // <-- invece di searchKey
-                                result.SuggestedExtension);
+                                result.SuggestedExtension,
+                                itemName);  // <-- invece di searchKey
  
             _logger.LogInformation(
                 "[MetadataService] Immagine salvata (id={ImageId}) tramite '{ProviderName}' per '{SearchKey}'",

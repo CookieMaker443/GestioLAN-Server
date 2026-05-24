@@ -84,70 +84,83 @@ public class ItemService : IItemService
     // Crea un nuovo oggetto nel DB
     public async Task<Item> CreateItemAsync(Item item)
     {
+        bool userHasImage = false;
+        image? image = null;
         if (item.IdImage == 0 || item.IdImage == null)
         {
             item.IdImage = null;
             item.ImageName = null;
+            userHasImage = false;
+            image = null;
         }
 
-        // se l'immagine dell'item non è null, aggiorna il counter di quell'immagine
-        // se ha un'immagine, verifica che esista e aggiorna il contatore
+        // se l'immagine dell'item non è null, controlla se esiste nel db(quindi che l id non è un errore e sia valido)
         if (item.IdImage != null)
         {
-            var image = await _context.Images.FindAsync(item.IdImage);
+            image = await _context.Images.FindAsync(item.IdImage);
             if (image == null)
             {
                 // immagine specificata non esiste, pulisce i campi e avvisa
                 item.IdImage = null;
                 item.ImageName = null;
+                userHasImage = false;
                 Console.WriteLine($"Immagine con id {item.IdImage} non trovata, item aggiunto senza immagine");
             }
-            else
-            {
-                image.ItemsCount++;
-                item.ImageName = image.FileName;
-            }
-        }
-        else
-        {
-            item.ImageName = null;
+            // se l'utente ha caricato un immagine valida, image la conterrà
         }
 
-        // vede se è possibile fetchare lì'immagine da provider esterni
-        if (!string.IsNullOrEmpty(item.Barcode) && item.IdCategory != null)
+        // 0 (Immagine Null / Non Esiste) + 0 (Override False) = True
+        // 0 (Immagine Null / Non Esiste) + 1 (Override True) = True
+        // 1 (Immagine Valida / Esiste) + 0 (Override False) = False
+        // 1 (Immagine Valida / Esiste) + 1 (Override True) = True
+        // L'espressione è vera se l'immagine non esiste OPPURE se l'override è attivo
+        bool immagineNonEsiste = image == null;
+        bool risultato = immagineNonEsiste || _apiOverrideMetadata;
+
+        //prova a fare override
+
+        // se esiste il bacode e l'immagine dell'utente è null oppure è possibile fare override, e ha una categoriaprova a fetchare
+        if(!string.IsNullOrEmpty(item.Barcode) && risultato && item.IdCategory!= null)
         {
-            bool userHasImage = item.IdImage != null;
-            bool shouldFetch = _apiOverrideMetadata || !userHasImage;
-        
-            if (shouldFetch)
-            {
-                int? fetchedImageId = await _metadataService.FetchAndSaveImageAsync(
+            // vede se è possibile fetchare lì'immagine da provider esterni 
+            int? fetchedImageId = null;
+                try
+                {
+                    fetchedImageId = await _metadataService.FetchAndSaveImageAsync(
                     searchKey: item.Barcode,
                     idCategory: item.IdCategory,
                     itemName: item.ItemName);
-        
+                } catch (Exception ex)
+                {
+                    // aggiungere i  futuro i log 
+                    Console.WriteLine($"[ItemService] Fetch immagine fallito: {ex.Message}");
+                    // image rimane quella dell'utente, se c'era
+                }
+
+                // se sono qui allora sto facendo override oppure non ho caricato immagini
+                // se non è null, l'immagine è stata scaricata e salvata, tornando il suo id
                 if (fetchedImageId != null)
                 {
-                    // Se c'era già un'immagine manuale e il plugin la sovrascrive,
-                    // abbassa il contatore della vecchia prima di sostituirla
-                    if (userHasImage && _apiOverrideMetadata)
-                    {
-                        var oldImage = await _context.Images.FindAsync(item.IdImage);
-                        if (oldImage != null)
-                            oldImage.ItemsCount--;
-                    }
-        
-                    var fetchedImage = await _context.Images.FindAsync(fetchedImageId);
-                    if (fetchedImage != null)
-                    {
-                        fetchedImage.ItemsCount++;
-                        item.IdImage = fetchedImage.IdImage;
-                        item.ImageName = fetchedImage.FileName;
-                    }
+                    // trovo l'immagine scaricata e la prendo
+                    image = await _context.Images.FindAsync(fetchedImageId);
+                    // Se c'era già un'immagine manuale il plugin la sovrascrive,
                 }
                 // Se fetchedImageId è null e l'utente aveva messo un'immagine manuale,
                 // non si tocca nulla — item.IdImage è già valorizzato correttamente
-            }
+        }
+
+        // l'immagine, se esiste è quella dell'utente, oppure trovata dall'api con override
+        if(image != null)
+        {
+            image.ItemsCount++;
+            item.ImageName = image.FileName;   
+            item.IdImage = image.IdImage;
+        }
+        else
+        {
+            // non è stata caricata alcuna immagine valita, e non è stato possibile trovare un immaine dal provider
+            item.ImageName=null;
+            item.IdImage = null;
         }
 
 

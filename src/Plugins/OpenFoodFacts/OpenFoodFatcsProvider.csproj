@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Deve corrispondere al framework usato dall'API -->
+    <TargetFramework>net8.0</TargetFramework>
+
+    <!-- abilita l'analisi statica del compilatore sui tipi nullable (string?, int? ecc.).  -->
+    <Nullable>enable</Nullable>
+    
+    <!-- di default dotnet mette la DLL in bin/Release/net8.0/. Con false la mette direttamente in bin/Release/ -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    
+    <!-- Abilita le nuove funzionalità del compilatore C# 12 -->
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <!-- Riferimento al progetto condiviso con l'interfaccia -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\Plugin.Shared.csproj" />
+  </ItemGroup>
+
+  <!-- HttpClient è già in net8, ma se usi Newtonsoft o System.Text.Json esplicito: -->
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="8.0.0" />
+  </ItemGroup>
+</Project>

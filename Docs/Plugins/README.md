@@ -42,19 +42,22 @@ Tutti i plugin custom devono implementare questa interfaccia definita nel modulo
 
 ## Installation & Setup
 
-1. **Riferimento all'interfaccia:** Fase di sviluppo.
+- **Setup di lavoro:** per iniziare bisogna seguire questa convenzione di creazione di partelle e file: `src/Plugins/{NomePlugin}/{NomePlugin}Provider.csproj`,
+questo serve per la github action
+
+- **Riferimento all'interfaccia:** Fase di sviluppo.
 Creare un nuovo progetto di libreria di classi in C#. Scaricare il pacchetto NuGet ufficiale del modulo `shared` (ancora non disponibile) oppure includere direttamente il file sorgente `IMetadataProvider.cs` come dipendenza.
 
 
-2. **Implementazione del codice:** Fase di sviluppo.
+- **Implementazione del codice:** Fase di sviluppo.
 Creare una classe pubblica che implementi `IMetadataProvider` e sviluppare la logica di chiamata HTTP verso l'API del provider scelto .
 le classi dovranno essere self-contained.
 
-3. **Compilazione:** Fase di sviluppo.
+- **Compilazione:** Fase di sviluppo.
 Compilare il progetto in modalità *Release* per generare il file binario `.dll` del plugin custom.
 
 
-4. **Distribuzione (Deployment):** Fase di rilascio.
+- **Distribuzione (Deployment):** Fase di rilascio.
 Inserire il file `.dll` generato all'interno della cartella dei `Plugins` dell'applicazione principale. Seguire le istruzioni specifiche per l'ambiente di runtime (vedere sotto).
 
 
@@ -63,7 +66,9 @@ Inserire il file `.dll` generato all'interno della cartella dei `Plugins` dell'a
 Se l'applicazione viene eseguita tramite container Docker, è necessario mappare la cartella dei plugin dall'host al container.
 
 1. Configurare un **bind mount** nel file `docker-compose.yml` o nel comando di run per la directory dei plugin.
-2. Copiare la `.dll` del plugin nella cartella locale dell'host associata al volume.
+2. 
+    - se NON hai il file compilato con la github action, creare dentro il volume dei plugin una cartella col nome del plugin e all'intrno inserire i file `.dll` e `.dept.json`.
+    - se hai compilato il plugin con la github action, scaricare il file `.zip`, e la cartella che tovi all'interno mettila dentro il volume
 3. Riavviare i container Docker con il comando:
 ```bash
 docker compose restart
@@ -72,7 +77,9 @@ docker compose restart
 
 ### Opzione B: Installazione Manuale (Senza Docker)
 1. in `src/GestioLan.API` creare una cartella `plugins`
-2. Copiare la `.dll` del plugin direttamente nella cartella `src/GestioLan.API/plugins` situata nella directory di esecuzione del software.
+2. 
+    - se NON hai il file compilato con la github action, creare una cartella col nome del plugin e all'intrno inserire i file `.dll` e `.dept.json`.
+    - se hai compilato il plugin con la github action, scaricare il file `.zip`, e la cartella all'interno mettila dentro plugin
 3. Riavviare il processo dell'applicazione. Al boot, il sistema eseguirà la scansione della cartella tramite **Reflection** e caricherà il plugin in memoria.
 
 ---

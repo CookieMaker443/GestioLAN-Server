@@ -2,21 +2,28 @@ DOCKER_USER=cookiemaker443
 API_IMAGE_NAME=gestiolan.api
 DATABASE_IMAGE_NAME=gestiolan.database
 IMAGE_TAG=latest
+
 # percorso assoluto della cartella dove voglio che vengano salvati i dati persistenti dei container
 RESOURCE_DEST_PATH=/docker/services
 
+# Database
 DB_ROOT_PASSWORD=YourDBRootPassword
 DB_NAME=GestioLan
 DB_USERNAME= YourDBNonRootUsername
 DB_PASSWORD= YourDBNonRootPassword
 DB_PORT=3306
-JWT_KEY= KeyJWT
+
+# API - Dentro il container 
+Storage__UsersPath=/app/data/uploads/users  # non modificare
+Storage__ItemsPath=/app/data/uploads/items  # non modificare
+Storage__LogsPath=/app/logs                 # non modificare
+Storage__PluginsPath=/app/plugins           # non modificare
+JwtSettings__Key= KeyJWT
 Metadata__ApiOverrideMetadata=false
 
-# Dentro il container
-PATH_USERS=/app/data/uploads/users
-PATH_ITEMS=/app/data/uploads/items
-PATH_PLUGINS=/app/plugins
+# Seq - per connettersi al container per i log, evitare di configurare diversamente
+ConnectionStrings__seq=http://seq:5341 # oppure protocollo http://[ip]:[porta]
+SEQ_FIRSTRUN_ADMINPASSWORD=password # username = admin
 
 # AI
 AI__Provider=ollama

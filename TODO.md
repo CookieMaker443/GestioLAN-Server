@@ -11,7 +11,7 @@ quando il container si genera, deve:
 *i dati sono opzionali*
 
 ## Docker compose
-- [ ] Migliorare la sicurezza dei container
+- [X] Migliorare la sicurezza dei container
 - [X] aggiornare i docker compose build per fare il bind mount
 - [X] aggiornare il docker compose che pulla le immagini, a pullare l immagine del database gia pronto (ancora da creare il container e da pubblicare)
 
@@ -40,4 +40,8 @@ quando il container si genera, deve:
 - [ ] il client, quando aggiunge un item, posta l'immagine, col return ottiene id e nome dell'immagine, loassegna all item e posta l'item
 
 ## Server
-- [ ] Aggiungere i log, chi aggiunge cosa, chi legge cosa, chi prova a fare cio che non puo (non admin actions)
+- [X] Aggiungere i log, chi aggiunge cosa, chi legge cosa, chi prova a fare cio che non puo (non admin actions)
+
+## Metadata provider
+- [ ] provare a fetchare immagini anche doppo il PUT degli item (con modifiche) 
+- [ ] a plugin stabili, provare a inserire metodi per fetchare nome, descrizione, se i plugin non possono provvedere , fanno return null

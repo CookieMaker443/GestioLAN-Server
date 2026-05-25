@@ -6,11 +6,11 @@ WORKDIR /src
 # Copia prima i file .csproj per sfruttare la cache dei layer
 COPY ["GestioLan.API/GestioLan.API.csproj", "GestioLan.API/"]
 COPY ["Plugins/Shared/Plugins.Shared.csproj", "Plugins/Shared/"]
-RUN dotnet restore
+RUN dotnet restore "GestioLan.API/GestioLan.API.csproj"
 
 # Copia tutto il codice e pubblica la release
 COPY . .
-RUN dotnet publish "GestioLan.API.csproj" -c Release -o /app/publish
+RUN dotnet publish "GestioLan.API/GestioLan.API.csproj" -c Release -o /app/publish
 
 # FASE 2: Runtime finale (Immagine leggera)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final

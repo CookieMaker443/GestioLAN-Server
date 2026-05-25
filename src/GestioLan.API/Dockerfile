@@ -12,6 +12,15 @@ RUN dotnet restore "GestioLan.API/GestioLan.API.csproj"
 COPY . .
 RUN dotnet publish "GestioLan.API/GestioLan.API.csproj" -c Release -o /app/publish
 
+# Pubblica Plugins.Shared separatamente in una cartella dedicata.
+# --no-self-contained: non include il runtime .NET nell'output, perche
+# il plugin viene caricato dentro il processo dell'API che ha gia .NET 8.
+# Produce: Plugins.Shared.dll e Plugins.Shared.deps.json
+RUN dotnet publish "Plugins/Shared/Plugins.Shared.csproj" \
+    -c Release \
+    --no-self-contained \
+    -o /app/plugins/Plugins.Shared
+
 # FASE 2: Runtime finale (Immagine leggera)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app

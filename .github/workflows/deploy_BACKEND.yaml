@@ -1,8 +1,19 @@
 name: Deploy containerized API
-on: workflow_dispatch
+on: 
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versione da rilasciare (es. 1.0.X) - la X viene incrementata automaticamente"
+        required: true
+        type: string
 jobs:
   build:
     runs-on: ubuntu-latest
+
+        # Variabili riutilizzate nei vari step
+    env:
+      VERSION:        ${{ github.event.inputs.version }}
+
     steps:
       # Scarica il tuo codice nel runner
       - name: Checkout del codice
@@ -37,4 +48,4 @@ jobs:
           # Qui gestiamo le versioni
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-api:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-api:v1.1.${{ github.run_number }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-api:v${{ env.VERSION }}.${{ github.run_number }}

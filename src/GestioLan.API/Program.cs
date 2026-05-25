@@ -7,6 +7,7 @@ using System.Text; // Per Encoding
 using Microsoft.AspNetCore.Authentication.JwtBearer; // Per JwtBearerDefaults
 using Microsoft.IdentityModel.Tokens; // Per TokenValidationParameters e SymmetricSecurityKey
 using GestioLan.API.Utils.JWT; // Per la classe JWT 
+using GestioLan.API.Utils.Helpers; // Per ICurrentUserService e CurrentUserService e middleware
 using GestioLan.API.Services.Categories; // Per ICategoryService e CategoryService
 using GestioLan.API.Services.Images; // Per IImageService e ImageService
 using GestioLan.API.Services.Users; // Per IUserService e UserService
@@ -20,12 +21,17 @@ using Plugins.Shared; //per IMetadataProvider
 var builder = WebApplication.CreateBuilder(args);
 
 // --- CONFIGURAZIONE SERILOG ---
+string logsFolder = builder.Configuration["Storage:LogsPath"];
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .WriteTo.Console() // Continua a scrivere in console per Docker
-    .WriteTo.File("/app/logs/api_log.txt", // Scrive nel file su Palla2
+    .Enrich.FromLogContext()          // <-- NECESSARIO per User e Service, oper passare info ai logger con LogContext.PushProperty(...)
+    .WriteTo.Console(outputTemplate: 
+        "[{Timestamp:yyyy-MM-dd HH:mm:ss}][{Level:u4}][{User}][{Service}][{Action}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File(logsFolder, 
+        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}][{Level:u4}][{User}][{Service}][{Action}] {Message:lj}{NewLine}{Exception}",
         rollingInterval: RollingInterval.Day, // Crea un file nuovo ogni giorno
         retainedFileCountLimit: 7) // Tiene solo gli ultimi 7 giorni
+    .WriteTo.Seq(builder.Configuration["ConnectionStrings:seq"] ?? "http://seq:5341")   // <-- Seq in Docker
     .CreateLogger();
 
 builder.Host.UseSerilog(); // Dice all'API di usare Serilog
@@ -119,6 +125,9 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IMetadataService, MetadataService>();
 
+// --- servizi necessari per loggare bene con le info degli utenti
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 // --- Connection String per il db ---
 var connectionString = builder.Configuration.GetConnectionString("GestioLANConnection");
@@ -181,9 +190,10 @@ if (app.Environment.IsDevelopment())
 app.UseStaticFiles();
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
+app.UseAuthentication(); // legge il JWT e popola il campo user
+app.UseAuthorization(); // // valida i permessi
+app.UseMiddleware<LogEnricherMiddleware>(); // esegue il middleware
+app.MapControllers(); // esegue il controller e l'action
 
 Console.WriteLine("C# API is running...");
 Console.WriteLine($"Using connection string: {connectionString}");

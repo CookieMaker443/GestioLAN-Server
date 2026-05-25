@@ -39,6 +39,9 @@
     <!-- sink per scrivere i log su file -->
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 
+    <!-- Seq -->
+    <PackageReference Include="Serilog.Sinks.Seq" Version="9.1.0" />
+
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 

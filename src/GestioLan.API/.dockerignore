@@ -1,0 +1,10 @@
+# Cartelle non necessarie per GestioLan.API
+AI/
+MCP/
+WebApp/
+
+# Roba di sviluppo
+**/bin/
+**/obj/
+**/.vs/
+**/*.user

@@ -37,4 +37,4 @@ jobs:
           # Qui gestiamo le versioni
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-database:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-database:v1.0.${{ github.run_number }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-database:v1.1.${{ github.run_number }}

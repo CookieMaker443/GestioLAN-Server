@@ -30,11 +30,11 @@ jobs:
       - name: Build e Push con Versionamento
         uses: docker/build-push-action@v5
         with:
-          context: ./src/GestioLan.API # Cerca il Dockerfile partendo dalla cartella src/GestioLan.API
+          context: ./src # Cerca il Dockerfile partendo da src, per includere anche /Plugins/Plugins.Shared.csproj
           file: ./src/GestioLan.API/Dockerfile # Percorso relativo del Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64 # Specifica le piattaforme
           # Qui gestiamo le versioni
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-api:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-api:v1.0.${{ github.run_number }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/gestiolan-api:v1.1.${{ github.run_number }}

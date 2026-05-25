@@ -2,8 +2,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia il file di progetto per fare il restore delle librerie
-COPY ["GestioLan.API.csproj", "./"]
+
+# Copia prima i file .csproj per sfruttare la cache dei layer
+COPY ["GestioLan.API/GestioLan.API.csproj", "GestioLan.API/"]
+COPY ["Plugins/Shared/Plugins.Shared.csproj", "Plugins/Shared/"]
 RUN dotnet restore
 
 # Copia tutto il codice e pubblica la release
@@ -16,5 +18,15 @@ WORKDIR /app
 
 # Copia solo la release dalla fase precedente ed espone la porta interna del container
 COPY --from=build /app/publish .
+
+# Crea le cartelle necessarie e un utente non-root
+RUN adduser --disabled-password --gecos "" appuser && \
+    mkdir -p /app/data/uploads/users \
+             /app/data/uploads/items \
+             /app/plugins && \
+    chown -R appuser /app
+
+USER appuser
+
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "GestioLan.API.dll"]

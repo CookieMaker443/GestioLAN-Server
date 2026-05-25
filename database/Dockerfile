@@ -1,9 +1,13 @@
 FROM mariadb:11.6
 
-# Copia lo script SQL (database.sql) nel container
-COPY database.sql /docker-entrypoint-initdb.d/
-
+# Copia gli script di inizializzazione
+COPY --chown=mysql:mysql database.sql /docker-entrypoint-initdb.d/01_database.sql
 # Copia lo script per aggiornare le migrazioni del db
-COPY migrations_data.sql /docker-entrypoint-initdb.d/
+COPY --chown=mysql:mysql migrations_data.sql /docker-entrypoint-initdb.d/02_migrations.sql
 
-# esegue lo script delle migrations copiato
+# Cartella dati con permessi corretti
+RUN mkdir -p /var/lib/mysql && \
+    chown -R mysql:mysql /var/lib/mysql && \
+    chmod 750 /var/lib/mysql
+
+USER mysql

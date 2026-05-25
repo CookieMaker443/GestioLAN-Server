@@ -44,9 +44,33 @@ string pluginsFolder = builder.Configuration["Storage:PluginsPath"]
 // Logghiamo il percorso che l'API sta scansionando (utile in Docker per fare debug dei volumi)
 Log.Information("[Plugin Loader] Cartella di scansione configurata: {Path}", pluginsFolder);
 if (Directory.Exists(pluginsFolder))
-{
+{   
+    // Carica Plugins.Shared PRIMA del loop 
+    // Caricandola nel Default context adesso, quando i plugin la richiedono
+    // il runtime la trova già e non la ricarica una seconda volta.
+    string sharedDll = Path.Combine(pluginsFolder, "Plugins.Shared", "Plugins.Shared.dll");
+    if (File.Exists(sharedDll))
+    {
+        Assembly.LoadFrom(sharedDll);
+        Log.Information("[Plugin Loader] Plugins.Shared caricata: {Path}", sharedDll);
+    }
+    else
+    {
+        Log.Warning("[Plugin Loader] Plugins.Shared.dll non trovata in: {Path}", sharedDll);
+    }
+
+
     // Cerca tutti i file .dll nella cartella configurata
-    var dllFiles = Directory.GetFiles(pluginsFolder, "*.dll");
+    // Loop sui plugin, esclusa la cartella Shared
+    string sharedFolder = Path.Combine(pluginsFolder, "Plugins.Shared");
+    var dllFiles = Directory
+        .GetFiles(pluginsFolder, "*.dll", SearchOption.AllDirectories)
+        .Where(dll =>
+        {
+            string folder = Path.GetDirectoryName(dll)!;
+            // Salta tutto ciò che è dentro Plugins.Shared/
+            return !folder.Equals(sharedFolder, StringComparison.OrdinalIgnoreCase);
+        });;
 
     foreach (var dllPath in dllFiles)
     {

@@ -1,0 +1,196 @@
+name: Release Plugin
+
+# Viene eseguita SOLO manualmente da GitHub → Actions → Release Plugin → Run workflow
+on:
+  workflow_dispatch:
+    inputs:
+      plugin_name:
+        description: "Nome del plugin (es. OpenFoodFacts)"
+        required: true
+        type: string
+      version:
+        description: "Versione da rilasciare (es. 1.0.0)"
+        required: true
+        type: string
+      release_notes:
+        description: "Note di rilascio (opzionale)"
+        required: false
+        default: ""
+        type: string
+      prerelease:
+        description: "Segna come pre-release?"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  release:
+    name: Build & Release ${{ github.event.inputs.plugin_name }}
+    runs-on: ubuntu-latest
+
+    # Permesso di scrivere nelle Releases di GitHub
+    permissions:
+      contents: write
+
+    # Variabili riutilizzate nei vari step
+    env:
+      PLUGIN_NAME:    ${{ github.event.inputs.plugin_name }}
+      VERSION:        ${{ github.event.inputs.version }}
+      # Convenzione: src/Plugins/{NomePlugin}/{NomePlugin}Provider.csproj
+      PLUGIN_CSPROJ:  src/Plugins/${{ github.event.inputs.plugin_name }}/${{ github.event.inputs.plugin_name }}Provider.csproj
+      SHARED_CSPROJ:  src/Plugins/Shared/Plugins.Shared.csproj
+
+    steps:
+
+      # ── STEP 1 ───────────────────────────────────────────────────────────────
+      # Clona il repository sul runner (la macchina virtuale Ubuntu di GitHub)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── STEP 2 ───────────────────────────────────────────────────────────────
+      # Installa .NET 8 sul runner
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # ── STEP 3 ───────────────────────────────────────────────────────────────
+      # Verifica che il plugin richiesto esista nel repo.
+      # Se l'utente scrive un nome sbagliato, il workflow fallisce QUI
+      # con un messaggio chiaro invece di fallire con un errore criptico dopo.
+      - name: Verifica che il plugin esista
+        run: |
+          if [ ! -f "${{ env.PLUGIN_CSPROJ }}" ]; then
+            echo "   ERRORE: il file '${{ env.PLUGIN_CSPROJ }}' non esiste."
+            echo "   Controlla che il nome del plugin sia corretto e che"
+            echo "   la struttura sia src/Plugins/{Nome}/{Nome}Provider.csproj"
+            exit 1
+          fi
+          echo "✔ Plugin trovato: ${{ env.PLUGIN_CSPROJ }}"
+
+      # ── STEP 4 ───────────────────────────────────────────────────────────────
+      # Ripristina i pacchetti NuGet del plugin.
+      # dotnet restore scende automaticamente nei ProjectReference,
+      # quindi ripristina anche Plugins.Shared senza bisogno di farlo a mano.
+      - name: Restore NuGet packages
+        run: dotnet restore ${{ env.PLUGIN_CSPROJ }}
+
+      # ── STEP 5 ───────────────────────────────────────────────────────────────
+      # Pubblica Plugins.Shared in una cartella dedicata.
+      # Questo ci dà la Plugins.Shared.dll + deps.json da mettere
+      # nella cartella Shared/ dello zip finale.
+      # --no-self-contained = non include il runtime .NET nell'output
+      #   (il plugin gira dentro il processo dell'API che ha già .NET 8)
+      - name: Pubblica Plugins.Shared
+        run: |
+          dotnet publish ${{ env.SHARED_CSPROJ }} \
+            --configuration Release \
+            --no-self-contained \
+            --output ./publish/Shared \
+            -p:Version=${{ env.VERSION }}
+
+      # ── STEP 6 ───────────────────────────────────────────────────────────────
+      # Pubblica il plugin scelto in una cartella dedicata.
+      # dotnet publish compila anche le dipendenze (Plugins.Shared),
+      # ma noi useremo solo la DLL del plugin stesso — la Shared
+      # la prendiamo dallo step precedente per evitare duplicati.
+      - name: Pubblica ${{ env.PLUGIN_NAME }}
+        run: |
+          dotnet publish ${{ env.PLUGIN_CSPROJ }} \
+            --configuration Release \
+            --no-self-contained \
+            --output ./publish/${{ env.PLUGIN_NAME }} \
+            -p:Version=${{ env.VERSION }}
+
+      # ── STEP 7 ───────────────────────────────────────────────────────────────
+      # Mostra tutto ciò che dotnet publish ha prodotto.
+      # Utile per fare debug se qualcosa non viene copiato correttamente.
+      - name: Mostra output del publish
+        run: |
+          echo "── Shared ──"
+          ls -lh ./publish/Shared/
+          echo "── ${{ env.PLUGIN_NAME }} ──"
+          ls -lh ./publish/${{ env.PLUGIN_NAME }}/
+
+      # ── STEP 8 ───────────────────────────────────────────────────────────────
+      # Costruisce la struttura di cartelle finale che l'utente
+      # dovrà estrarre dentro plugins/ sul server:
+      #
+      #   release/
+      #   ├── Plugins.Shared/
+      #   │   ├── Plugins.Shared.dll
+      #   │   └── Plugins.Shared.deps.json
+      #   └── OpenFoodFacts/                  (o il plugin scelto)
+      #       ├── OpenFoodFactsProvider.dll
+      #       └── OpenFoodFactsProvider.deps.json
+      #
+      # Vengono copiati SOLO dll e deps.json — non il runtime,
+      # non i file di configurazione, non gli eseguibili host.
+      - name: Prepara struttura cartelle
+        run: |
+          mkdir -p ./release/Plugins.Shared
+          mkdir -p ./release/${{ env.PLUGIN_NAME }}
+
+          # Copia Plugins.Shared.dll e il suo deps.json
+          cp ./publish/Shared/Plugins.Shared.dll \
+             ./release/Plugins.Shared/
+          cp ./publish/Shared/Plugins.Shared.deps.json \
+             ./release/Plugins.Shared/
+
+          # Copia la DLL del plugin e il suo deps.json
+          # Il nome del file segue la convenzione {Nome}Provider
+          cp ./publish/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}Provider.dll \
+             ./release/${{ env.PLUGIN_NAME }}/
+          cp ./publish/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}Provider.deps.json \
+             ./release/${{ env.PLUGIN_NAME }}/
+
+          echo "── Struttura finale ──"
+          find ./release -type f | sort
+
+      # ── STEP 9 ───────────────────────────────────────────────────────────────
+      # Crea lo zip mantenendo la struttura di cartelle interna.
+      # L'utente può estrarlo direttamente dentro plugins/ e ottenere
+      # esattamente la struttura attesa dal loader.
+      - name: Crea zip
+        run: |
+          cd ./release
+          zip -r ../${{ env.PLUGIN_NAME }}-v${{ env.VERSION }}.zip .
+          cd ..
+          echo "── ZIP creato ──"
+          ls -lh ./${{ env.PLUGIN_NAME }}-v${{ env.VERSION }}.zip
+
+      # ── STEP 10 ──────────────────────────────────────────────────────────────
+      # Crea la Release ufficiale su GitHub con il tag e carica lo zip.
+      # Il tag segue il formato: OpenFoodFacts-v1.0.0
+      # Così ogni plugin ha i suoi tag separati e la pagina Releases
+      # mostra chiaramente quale versione appartiene a quale plugin.
+      - name: Crea GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "${{ env.PLUGIN_NAME }}-v${{ env.VERSION }}"
+          name:     "${{ env.PLUGIN_NAME }} v${{ env.VERSION }}"
+          body: |
+            ## ${{ env.PLUGIN_NAME }} — v${{ env.VERSION }}
+
+            ${{ github.event.inputs.release_notes }}
+
+            ### Come installare
+            1. Scarica lo zip qui sotto
+            2. Estrai il contenuto **dentro** la cartella `plugins/` sul server
+            3. Riavvia l'API
+
+            ### Struttura dopo l'estrazione
+            ```
+            plugins/
+            ├── Plugins.Shared/
+            │   ├── Plugins.Shared.dll
+            │   └── Plugins.Shared.deps.json
+            └── ${{ env.PLUGIN_NAME }}/
+                ├── ${{ env.PLUGIN_NAME }}Provider.dll
+                └── ${{ env.PLUGIN_NAME }}Provider.deps.json
+            ```
+
+            > Se `Plugins.Shared/` esiste già sul server con la stessa versione, puoi sovrascriverla senza problemi.
+          prerelease: ${{ github.event.inputs.prerelease }}
+          files: |
+            ./${{ env.PLUGIN_NAME }}-v${{ env.VERSION }}.zip

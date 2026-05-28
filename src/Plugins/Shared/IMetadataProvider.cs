@@ -11,6 +11,12 @@ public interface IMetadataProvider
 
     // Riceve una chiave di ricerca (Barcode, seriale ecc.) e restituisce lo Stream dell'immagine scaricata
     Task<ProviderImageResult?> DownloadImageAsync(string searchKey);
+
+    // Riceve il nome piu formale dell item 
+    Task<string> GetCorrectNameAsync(string searchKey);
+
+    // Riceve una breve descrizione deii item
+    Task<string> GetCorrectDescriptionAsync(string sarchKey);
 }
 
 // Questa classe serve a impacchettare lo stream binario e l'estensione del file

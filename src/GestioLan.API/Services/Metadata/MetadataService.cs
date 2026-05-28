@@ -59,6 +59,39 @@ public class MetadataService : IMetadataService
             providerName, idCategory);
     }
 
+    //risolve il plugin per una categoria (o null)
+    // e logga eventuali anomalie di configurazione
+    private IMetadataProvider? ResolvePlugin(
+        string? providerName,
+        int categoryId)
+    {
+        if (providerName == null)
+            return null;
+
+        var plugin = _plugins.FirstOrDefault(p =>
+            p.ProviderName.Equals(providerName, StringComparison.OrdinalIgnoreCase));
+
+        // DLL rimossa a mano: anomalia di configurazione, logga e passa al prossimo
+        if (plugin == null)
+        {
+            _logger.LogError(
+                "[MetadataService] Il provider '{ProviderName}' è configurato nel DB per la categoria {IdCategory} " +
+                "ma la sua DLL non è presente in /plugins. Saltato.",
+                providerName, categoryId);
+        }
+
+        return plugin;
+    }
+
+    // carica le categorie attive per la bitmask
+    private async Task<List<Category>> GetActiveCategoriesAsync(int idCategory)
+    {
+        return await _context.Categories
+            .Where(c => c.AssociatedProviderName != null &&
+                        (idCategory & c.IdCategory) == c.IdCategory)
+            .ToListAsync();
+    }
+
     // 3. CORE: scarica l'immagine provando i provider delle categorie attive
     //    nell'ordine in cui sono nel DB, si ferma al primo risultato non-null
     public async Task<int?> FetchAndSaveImageAsync(string searchKey, int? idCategory, string? itemName = null)
@@ -73,11 +106,8 @@ public class MetadataService : IMetadataService
  
         // Recupera tutte le categorie che hanno un provider associato e il cui bit
         // è attivo nella bitmask dell'item (es. idCategory=0011 matcha sia 0001 che 0010)
-        var activeCategories = await _context.Categories
-            .Where(c => c.AssociatedProviderName != null &&
-                        (idCategory.Value & c.IdCategory) == c.IdCategory)
-            .ToListAsync();
- 
+        var activeCategories = await GetActiveCategoriesAsync(idCategory.Value);
+
         if (activeCategories.Count == 0)
         {
             _logger.LogDebug(
@@ -95,18 +125,7 @@ public class MetadataService : IMetadataService
         // Prova i provider uno alla volta — si ferma al primo che restituisce un'immagine
         foreach (var category in activeCategories)
         {
-            var plugin = _plugins.FirstOrDefault(p =>
-                p.ProviderName.Equals(category.AssociatedProviderName, StringComparison.OrdinalIgnoreCase));
- 
-            // DLL rimossa a mano: anomalia di configurazione, logga e passa al prossimo
-            if (plugin == null)
-            {
-                _logger.LogError(
-                    "[MetadataService] Il provider '{ProviderName}' è configurato nel DB per la categoria {IdCategory} " +
-                    "ma la sua DLL non è presente in /plugins. Saltato.",
-                    category.AssociatedProviderName, category.IdCategory);
-                continue;
-            }
+            var plugin = ResolvePlugin(category.AssociatedProviderName, category.IdCategory);
  
             _logger.LogInformation(
                 "[MetadataService] Tentativo download con '{ProviderName}' per searchKey '{SearchKey}'",
@@ -140,6 +159,112 @@ public class MetadataService : IMetadataService
         // Tutti i provider hanno restituito null
         _logger.LogInformation(
             "[MetadataService] Nessun provider ha trovato un'immagine per '{SearchKey}'",
+            searchKey);
+        return null;
+    }
+
+    // 4. CORE — NOME
+    // Recupera il nome "ufficiale" dal primo provider che restituisce una stringa non vuota
+    public async Task<string?> FetchNameAsync(string searchKey, int? idCategory)
+    {
+        if (idCategory == null)
+        {
+            _logger.LogDebug(
+                "[MetadataService] Item '{SearchKey}' senza categoria, skip recupero nome automatico",
+                searchKey);
+            return null;
+        }
+
+        var activeCategories = await GetActiveCategoriesAsync(idCategory.Value);
+
+        if (activeCategories.Count == 0)
+        {
+            _logger.LogDebug(
+                "[MetadataService] Nessuna categoria con provider associato trovata per bitmask {IdCategory} (nome)",
+                idCategory);
+            return null;
+        }
+
+        foreach (var category in activeCategories)
+        {
+            var plugin = ResolvePlugin(category.AssociatedProviderName, category.IdCategory);
+            if (plugin == null)
+                continue;
+
+            _logger.LogInformation(
+                "[MetadataService] Tentativo recupero nome con '{ProviderName}' per searchKey '{SearchKey}'",
+                plugin.ProviderName, searchKey);
+
+            var name = await plugin.GetCorrectNameAsync(searchKey);
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                _logger.LogInformation(
+                    "[MetadataService] Nome '{Name}' trovato tramite '{ProviderName}' per '{SearchKey}'",
+                    name, plugin.ProviderName, searchKey);
+                return name;
+            }
+
+            _logger.LogInformation(
+                "[MetadataService] '{ProviderName}' non ha restituito un nome per '{SearchKey}', provo il prossimo provider",
+                plugin.ProviderName, searchKey);
+        }
+
+        _logger.LogInformation(
+            "[MetadataService] Nessun provider ha trovato un nome per '{SearchKey}'",
+            searchKey);
+        return null;
+    }
+
+    // 5. CORE — DESCRIZIONE
+    // Recupera la descrizione nutrizionale dal primo provider che restituisce una stringa non vuota
+    public async Task<string?> FetchDescriptionAsync(string searchKey, int? idCategory)
+    {
+        if (idCategory == null)
+        {
+            _logger.LogDebug(
+                "[MetadataService] Item '{SearchKey}' senza categoria, skip recupero descrizione automatico",
+                searchKey);
+            return null;
+        }
+
+        var activeCategories = await GetActiveCategoriesAsync(idCategory.Value);
+
+        if (activeCategories.Count == 0)
+        {
+            _logger.LogDebug(
+                "[MetadataService] Nessuna categoria con provider associato trovata per bitmask {IdCategory} (descrizione)",
+                idCategory);
+            return null;
+        }
+
+        foreach (var category in activeCategories)
+        {
+            var plugin = ResolvePlugin(category.AssociatedProviderName, category.IdCategory);
+            if (plugin == null)
+                continue;
+
+            _logger.LogInformation(
+                "[MetadataService] Tentativo recupero descrizione con '{ProviderName}' per searchKey '{SearchKey}'",
+                plugin.ProviderName, searchKey);
+
+            var description = await plugin.GetCorrectDescriptionAsync(searchKey);
+
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                _logger.LogInformation(
+                    "[MetadataService] Descrizione trovata tramite '{ProviderName}' per '{SearchKey}'",
+                    plugin.ProviderName, searchKey);
+                return description;
+            }
+
+            _logger.LogInformation(
+                "[MetadataService] '{ProviderName}' non ha restituito una descrizione per '{SearchKey}', provo il prossimo provider",
+                plugin.ProviderName, searchKey);
+        }
+
+        _logger.LogInformation(
+            "[MetadataService] Nessun provider ha trovato una descrizione per '{SearchKey}'",
             searchKey);
         return null;
     }

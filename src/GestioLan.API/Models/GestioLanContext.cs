@@ -35,8 +35,8 @@ public partial class GestioLanContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
-            .UseCollation("armscii8_general_ci")
-            .HasCharSet("armscii8");
+            .UseCollation("utf8mb4_unicode_ci")
+            .HasCharSet("utf8mb4");
 
         modelBuilder.Entity<Category>(entity =>
         {

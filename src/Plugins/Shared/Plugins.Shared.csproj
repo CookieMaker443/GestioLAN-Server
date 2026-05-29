@@ -9,6 +9,9 @@
     
     <!-- Abilita le nuove funzionalità del compilatore C# 12 -->
     <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.0.0</Version>
+    <!-- Impedisce che -p:Version sovrascriva questa versione -->
+    <IsVersionable>false</IsVersionable>
   </PropertyGroup>
 
 </Project>

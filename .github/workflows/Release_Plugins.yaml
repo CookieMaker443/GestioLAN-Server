@@ -81,13 +81,13 @@ jobs:
       # nella cartella Shared/ dello zip finale.
       # --no-self-contained = non include il runtime .NET nell'output
       #   (il plugin gira dentro il processo dell'API che ha già .NET 8)
-      - name: Pubblica Plugins.Shared
+      - name: Crea pacchetto Plugins.Shared
         run: |
           dotnet publish ${{ env.SHARED_CSPROJ }} \
             --configuration Release \
             --no-self-contained \
-            --output ./publish/Shared \
-            -p:Version=${{ env.VERSION }}
+            --output ./publish/Shared
+      # cosi uso la vrsione fissa del plugin shared senza modificarlo
 
       # ── STEP 6 ───────────────────────────────────────────────────────────────
       # Pubblica il plugin scelto in una cartella dedicata.
@@ -100,7 +100,10 @@ jobs:
             --configuration Release \
             --no-self-contained \
             --output ./publish/${{ env.PLUGIN_NAME }} \
-            -p:Version=${{ env.VERSION }}
+            -p:VersionPrefix=${{ env.VERSION }} \
+            -p:BuildProjectReferences=false
+
+      # cosi non ricompila la dll di shared
 
       # ── STEP 7 ───────────────────────────────────────────────────────────────
       # Mostra tutto ciò che dotnet publish ha prodotto.

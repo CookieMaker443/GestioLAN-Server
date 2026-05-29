@@ -6,32 +6,43 @@ namespace GestioLan.API.Services.Categories;
 public class CategoryService : ICategoryService
 {
     private readonly GestioLanContext _context;
+    private readonly ILogger<CategoryService> _logger;
 
-    public CategoryService(GestioLanContext context)
+    public CategoryService(GestioLanContext context, ILogger<CategoryService> logger)
     {
+        _logger = logger;
         _context = context;
     }
 
     public async Task<IEnumerable<Category>> GetAllCategoriesAsync()
     {
-        return await _context.Categories.OrderBy(c => c.IdCategory).ToListAsync();
+        _logger.LogInformation("Retrieving all categories");
+        var categories = await _context.Categories.OrderBy(c => c.IdCategory).ToListAsync();
+        _logger.LogInformation("Returned {Count} categories", categories.Count);
+        return categories;
+
     }
 
     public async Task<Category> AddCategoryAsync(string nome)
     {
         // 1. Conta quanti record ci sono
+        _logger.LogInformation("Attempting to add category: {Name}", nome);
+
         var count = await _context.Categories.CountAsync();
         if (count >= 31) 
         {
-            throw new InvalidOperationException("Limite massimo di 32 categorie raggiunto.");
+            _logger.LogWarning("Category limit reached ({Count}/31), cannot add: {Name}", count, nome);
+            throw new InvalidOperationException("Maximum limit of 32 categories reached.");
         }
 
         // Controlla se esiste già una categoria con lo stesso nome
         bool giaEsistente = await _context.Categories.AnyAsync(c => c.NameCategory == nome);
         if (giaEsistente) 
         {
-            throw new ArgumentException("Categoria già esistente.");
+            _logger.LogWarning("Category already exists: {Name}", nome);
+            throw new ArgumentException("Category already exists.");
         }
+
 
         // 2. trova  l'ultimo id_category usato piu alto
         var maxId = await _context.Categories.MaxAsync(c => (int?)c.IdCategory) ?? 0;
@@ -44,6 +55,7 @@ public class CategoryService : ICategoryService
             if (!existingIds.Contains(potentialId))
             {
                 maxId = potentialId; // Usa il "buco" trovato
+                _logger.LogInformation("Assigned bitmask ID: {IdCategory}", maxId);
                 break;
             }
         }
@@ -53,45 +65,56 @@ public class CategoryService : ICategoryService
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Category created successfully: ID {IdCategory}, Name {Name}", category.IdCategory, category.NameCategory);
             return category;
         }
 
-        catch (DbUpdateException)
+        catch (DbUpdateException ex)
         {
-            throw new InvalidOperationException("Nessun bit valido disponibile per la bitmask.");
+            _logger.LogError(ex.Message, "DB error while adding category: {Name}", nome);
+            throw new InvalidOperationException("No valid bitmask bit available.");
+
         }
     }
 
     public async Task<string> UpdateCategoryAsync(int id, Category category)
     {
+        _logger.LogInformation("Attempting to update category with ID: {Id}", id);
+
         // coontrolla se sono uguali
         if (id != category.IdCategory)
         {
-            throw new ArgumentException("L'ID nella URL non corrisponde all'ID nel corpo della richiesta.");
+            _logger.LogWarning("ID mismatch: route ID {Id} does not match body ID {BodyId}", id, category.IdCategory);
+            throw new ArgumentException("The URL ID does not match the ID in the request body.");
         }
 
         // Controlla se il nome della categoria è vuoto
         if (string.IsNullOrEmpty(category.NameCategory))
         {
-            throw new ArgumentException("Il nome della categoria non può essere vuoto.");
+            _logger.LogWarning("Update rejected: category name is empty for ID {Id}", id);
+            throw new ArgumentException("Category name cannot be empty.");
+
         }
 
         // Controlla se esiste già un'altra categoria con lo stesso nome
         if (await _context.Categories.AnyAsync(c => c.NameCategory == category.NameCategory && c.IdCategory != id))
         {
-            throw new ArgumentException("Esiste già una categoria con questo nome.");
+            _logger.LogWarning("Update rejected: another category with name '{Name}' already exists", category.NameCategory);
+            throw new ArgumentException("A category with this name already exists.");
         }
 
         // Controlla se stai modificando la stessa risorsa con gli stessi dati
         if (await _context.Categories.AnyAsync(c => c.NameCategory == category.NameCategory && c.IdCategory == id))
         {
-            throw new ArgumentException("La categoria è già quella che stai cercando di modificare.");
+            _logger.LogWarning("Update rejected: category ID {Id} already has name '{Name}'", id, category.NameCategory);
+            throw new ArgumentException("The category already has the name you are trying to set.");
         }
 
         // Controlla se la categoria esiste (se esiste, l'id dovrebbe essere valido, altrimenti restituirebbe NotFound)
         var catInDb = await _context.Categories.FindAsync(id);
         if (catInDb == null) 
         {
+            _logger.LogWarning("Category with ID {Id} not found", id);
             throw new KeyNotFoundException();
         }
 
@@ -101,36 +124,44 @@ public class CategoryService : ICategoryService
         try 
         {
             await _context.SaveChangesAsync();
-            return $"Categoria `{id}` modificata da '{oldName}' a '{category.NameCategory}'";
+            _logger.LogInformation("Category ID {Id} renamed from '{OldName}' to '{NewName}'", id, oldName, category.NameCategory);
+            return $"Category `{id}` renamed from '{oldName}' to '{category.NameCategory}'";
         }
         catch (DbUpdateException ex)
         {
-            throw new Exception("Errore di validazione del Database (Bitmask non valida).", ex);
+            _logger.LogError(ex, "DB error while updating category ID {Id}", id);
+            throw new Exception("Database validation error (invalid bitmask).", ex);
         }
+
     }
 
-        public async Task<Category> DeleteCategoryAsync(int id)
+    public async Task<Category> DeleteCategoryAsync(int id)
+    {
+        _logger.LogInformation("Attempting to delete category with ID: {Id}", id);
+
+        var category = await _context.Categories.FindAsync(id);
+        if (category == null)
         {
-            var category = await _context.Categories.FindAsync(id);
-            if (category == null)
-            {
-                throw new KeyNotFoundException();
-            }
+            _logger.LogWarning("Category with ID {Id} not found", id);
+            throw new KeyNotFoundException();
+        }
 
             // Recupera gli item che hanno questa categoria nella bitmask
-            var prodToUpdate = await _context.Items
-                .Where(p => (p.IdCategory & category.IdCategory) != 0)
-                .ToListAsync();
+        var prodToUpdate = await _context.Items
+            .Where(p => (p.IdCategory & category.IdCategory) != 0)
+            .ToListAsync();
 
-            foreach (var prod in prodToUpdate)
-            {
-                // Rimuove il bit della categoria
-                prod.IdCategory = prod.IdCategory & ~category.IdCategory; // Rimuove la categoria usando un AND con il complemento
-            }
-
-            _context.Categories.Remove(category);
-            await _context.SaveChangesAsync();
-
-            return category;
+        _logger.LogInformation("Removing category bitmask from {Count} item(s)", prodToUpdate.Count);
+        foreach (var prod in prodToUpdate)
+        {
+            // Rimuove il bit della categoria
+            prod.IdCategory = prod.IdCategory & ~category.IdCategory; // Rimuove la categoria usando un AND con il complemento
         }
+
+        _context.Categories.Remove(category);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Category ID {Id} ('{Name}') deleted successfully", id, category.NameCategory);
+        return category;
+    }
 }

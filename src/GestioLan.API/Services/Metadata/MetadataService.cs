@@ -41,11 +41,11 @@ public class MetadataService : IMetadataService
         if (!pluginExists)
         {
             _logger.LogWarning(
-                "[MetadataService] Tentativo di associare provider inesistente '{ProviderName}' alla categoria {IdCategory}",
+                "[MetadataService] Trying to link inexisting provider '{ProviderName}' to category {IdCategory}",
                 providerName, idCategory);
 
             throw new ArgumentException(
-                $"Il plugin '{providerName}' non è caricato. Provider disponibili: {string.Join(", ", GetLoadedProviders())}");
+                $"Plugin '{providerName}' not loaded. Provider avaiable: {string.Join(", ", GetLoadedProviders())}");
         }
 
         var category = await _context.Categories.FindAsync(idCategory)
@@ -55,7 +55,7 @@ public class MetadataService : IMetadataService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation(
-            "[MetadataService] Provider '{ProviderName}' associato alla categoria {IdCategory}",
+            "[MetadataService] Provider '{ProviderName}' linked to category {IdCategory}",
             providerName, idCategory);
     }
 
@@ -75,8 +75,8 @@ public class MetadataService : IMetadataService
         if (plugin == null)
         {
             _logger.LogError(
-                "[MetadataService] Il provider '{ProviderName}' è configurato nel DB per la categoria {IdCategory} " +
-                "ma la sua DLL non è presente in /plugins. Saltato.",
+                "[MetadataService] The provider '{ProviderName}' is configured in the DB for the category {IdCategory} " +
+                "but the DLL does not exist in /plugins. Skipped.",
                 providerName, categoryId);
         }
 
@@ -99,7 +99,7 @@ public class MetadataService : IMetadataService
         if (idCategory == null)
         {
             _logger.LogDebug(
-                "[MetadataService] Item '{SearchKey}' senza categoria, skip recupero immagine automatico",
+                "[MetadataService] Item '{SearchKey}' without category, skip fetching image",
                 searchKey);
             return null;
         }
@@ -111,13 +111,13 @@ public class MetadataService : IMetadataService
         if (activeCategories.Count == 0)
         {
             _logger.LogDebug(
-                "[MetadataService] Nessuna categoria con provider associato trovata per bitmask {IdCategory}",
+                "[MetadataService] No category with provider linked found for bitmask {IdCategory}",
                 idCategory);
             return null;
         }
  
         _logger.LogInformation(
-            "[MetadataService] Trovate {Count} categorie con provider per bitmask {IdCategory}: [{Providers}]",
+            "[MetadataService] Found {Count} category with provider or bitmask {IdCategory}: [{Providers}]",
             activeCategories.Count,
             idCategory,
             string.Join(", ", activeCategories.Select(c => c.AssociatedProviderName)));
@@ -128,7 +128,7 @@ public class MetadataService : IMetadataService
             var plugin = ResolvePlugin(category.AssociatedProviderName, category.IdCategory);
  
             _logger.LogInformation(
-                "[MetadataService] Tentativo download con '{ProviderName}' per searchKey '{SearchKey}'",
+                "[MetadataService] Trying to download with '{ProviderName}' using searchKey '{SearchKey}'",
                 plugin.ProviderName, searchKey);
  
             // Il plugin gestisce internamente eccezioni di rete e restituisce null in caso di fallimento
@@ -137,7 +137,7 @@ public class MetadataService : IMetadataService
             if (result == null)
             {
                 _logger.LogInformation(
-                    "[MetadataService] '{ProviderName}' non ha trovato nulla per '{SearchKey}', provo il prossimo provider",
+                    "[MetadataService] '{ProviderName}' has found nothing for '{SearchKey}', trying next provider",
                     plugin.ProviderName, searchKey);
                 continue;
             }
@@ -149,7 +149,7 @@ public class MetadataService : IMetadataService
                                 itemName);  // <-- invece di searchKey
  
             _logger.LogInformation(
-                "[MetadataService] Immagine salvata (id={ImageId}) tramite '{ProviderName}' per '{SearchKey}'",
+                "[MetadataService] Image saved (id={ImageId}) with '{ProviderName}' for '{SearchKey}'",
                 savedImageId, plugin.ProviderName, searchKey);
  
             // restituisce l'id ottenuto dalla tabella del db
@@ -158,7 +158,7 @@ public class MetadataService : IMetadataService
  
         // Tutti i provider hanno restituito null
         _logger.LogInformation(
-            "[MetadataService] Nessun provider ha trovato un'immagine per '{SearchKey}'",
+            "[MetadataService] No provider has found an image for '{SearchKey}'",
             searchKey);
         return null;
     }
@@ -170,7 +170,7 @@ public class MetadataService : IMetadataService
         if (idCategory == null)
         {
             _logger.LogDebug(
-                "[MetadataService] Item '{SearchKey}' senza categoria, skip recupero nome automatico",
+                "[MetadataService] Item '{SearchKey}' without category, skipping auto name fetching",
                 searchKey);
             return null;
         }
@@ -180,7 +180,7 @@ public class MetadataService : IMetadataService
         if (activeCategories.Count == 0)
         {
             _logger.LogDebug(
-                "[MetadataService] Nessuna categoria con provider associato trovata per bitmask {IdCategory} (nome)",
+                "[MetadataService] No category with provider linked found for bitmask {IdCategory} (name)",
                 idCategory);
             return null;
         }
@@ -192,7 +192,7 @@ public class MetadataService : IMetadataService
                 continue;
 
             _logger.LogInformation(
-                "[MetadataService] Tentativo recupero nome con '{ProviderName}' per searchKey '{SearchKey}'",
+                "[MetadataService] Trying to download with '{ProviderName}' using searchKey '{SearchKey}'",
                 plugin.ProviderName, searchKey);
 
             var name = await plugin.GetCorrectNameAsync(searchKey);
@@ -200,18 +200,18 @@ public class MetadataService : IMetadataService
             if (!string.IsNullOrWhiteSpace(name))
             {
                 _logger.LogInformation(
-                    "[MetadataService] Nome '{Name}' trovato tramite '{ProviderName}' per '{SearchKey}'",
+                    "[MetadataService] Name '{Name}' found trough '{ProviderName}' for '{SearchKey}'",
                     name, plugin.ProviderName, searchKey);
                 return name;
             }
 
             _logger.LogInformation(
-                "[MetadataService] '{ProviderName}' non ha restituito un nome per '{SearchKey}', provo il prossimo provider",
+                "[MetadataService] '{ProviderName}' has found nothing for '{SearchKey}', trying next provider",
                 plugin.ProviderName, searchKey);
         }
 
         _logger.LogInformation(
-            "[MetadataService] Nessun provider ha trovato un nome per '{SearchKey}'",
+            "[MetadataService] No provider has found a name for '{SearchKey}'",
             searchKey);
         return null;
     }
@@ -223,7 +223,7 @@ public class MetadataService : IMetadataService
         if (idCategory == null)
         {
             _logger.LogDebug(
-                "[MetadataService] Item '{SearchKey}' senza categoria, skip recupero descrizione automatico",
+                "[MetadataService] Item '{SearchKey}' without category, skip fetching description",
                 searchKey);
             return null;
         }
@@ -233,7 +233,7 @@ public class MetadataService : IMetadataService
         if (activeCategories.Count == 0)
         {
             _logger.LogDebug(
-                "[MetadataService] Nessuna categoria con provider associato trovata per bitmask {IdCategory} (descrizione)",
+                "[MetadataService] No category with provider linked found for bitmask {IdCategory}(description)",
                 idCategory);
             return null;
         }
@@ -245,7 +245,7 @@ public class MetadataService : IMetadataService
                 continue;
 
             _logger.LogInformation(
-                "[MetadataService] Tentativo recupero descrizione con '{ProviderName}' per searchKey '{SearchKey}'",
+                "[MetadataService] Trying fetching description with '{ProviderName}' using searchKey '{SearchKey}'",
                 plugin.ProviderName, searchKey);
 
             var description = await plugin.GetCorrectDescriptionAsync(searchKey);
@@ -253,18 +253,18 @@ public class MetadataService : IMetadataService
             if (!string.IsNullOrWhiteSpace(description))
             {
                 _logger.LogInformation(
-                    "[MetadataService] Descrizione trovata tramite '{ProviderName}' per '{SearchKey}'",
+                    "[MetadataService] Description found trough '{ProviderName}' for '{SearchKey}'",
                     plugin.ProviderName, searchKey);
                 return description;
             }
 
             _logger.LogInformation(
-                "[MetadataService] '{ProviderName}' non ha restituito una descrizione per '{SearchKey}', provo il prossimo provider",
+                "[MetadataService] '{ProviderName}' has found nothing for '{SearchKey}', trying next provider",
                 plugin.ProviderName, searchKey);
         }
 
         _logger.LogInformation(
-            "[MetadataService] Nessun provider ha trovato una descrizione per '{SearchKey}'",
+            "[MetadataService] No provider has found a description for '{SearchKey}'",
             searchKey);
         return null;
     }

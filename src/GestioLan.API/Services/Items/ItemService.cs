@@ -33,6 +33,9 @@ public class ItemService : IItemService
         int? quantity,
         string? type_quantity)
     {
+        _logger.LogInformation("Retrieving items with filters: has_category={HasCategory}, id_category={IdCategory}, name={Name}, has_image={HasImage}, quantity={Quantity}, type_quantity={TypeQuantity}",
+            has_category, id_category, name, has_image, quantity, type_quantity);
+
         IQueryable<Item> query = _context.Items;
 
         if (has_category.HasValue)
@@ -70,16 +73,23 @@ public class ItemService : IItemService
         if (!string.IsNullOrEmpty(type_quantity))
             query = query.Where(item => item.TypeQuantity == type_quantity);
 
-        return await query.ToListAsync();
+        var items = await query.ToListAsync();
+        _logger.LogInformation("Returned {Count} items", items.Count);
+        return items;
+
     }
 
     // Ottiene un singolo oggetto del DB tramite il suo ID
     public async Task<Item> GetItemByIdAsync(int id)
     {
+        _logger.LogInformation("Retrieving item with ID: {Id}", id);
+
         var item = await _context.Items.FindAsync(id);
 
-        if (item == null)
-            throw new KeyNotFoundException($"Item con id {id} non trovato");
+        if (item == null){
+            _logger.LogWarning("Item with ID {Id} not found", id);
+            throw new KeyNotFoundException($"Item with id {id} not found");
+        }
 
         return item;
     }
@@ -96,6 +106,7 @@ public class ItemService : IItemService
         //      0      |    1    →  Sì
         //      1      |    0    →  No
         //      1      |    1    →  Sì   (override sovrascrive)
+        _logger.LogInformation("Creating new item: {ItemName}, Barcode: {Barcode}", item.ItemName ?? "unknown", item.Barcode ?? "none");
 
         bool nomeAssente = string.IsNullOrWhiteSpace(item.ItemName);
         bool tentaFetchNome = !string.IsNullOrEmpty(item.Barcode)
@@ -104,6 +115,7 @@ public class ItemService : IItemService
 
         if (tentaFetchNome)
         {
+            _logger.LogInformation("Attempting name fetch for barcode: {Barcode}", item.Barcode);
             try
             {
                 string? fetchedName = await _metadataService.FetchNameAsync(
@@ -111,20 +123,25 @@ public class ItemService : IItemService
                     idCategory: item.IdCategory);
 
                 if (!string.IsNullOrWhiteSpace(fetchedName)) {
-                    _logger.LogInformation("Fetch nome avvenuto");
+                    _logger.LogInformation("Name fetched successfully: {FetchedName}", fetchedName);
                     item.ItemName = fetchedName;
                 }
+                else
+                {
+                    _logger.LogInformation("Name fetch returned no result for barcode: {Barcode}", item.Barcode);
+                }
+
                 // Se null e l'utente aveva un nome, rimane invariato
             }
             catch (Exception ex)
             {
-                _logger.LogInformation("Fetch nome fallito: {ex.Message}", ex.Message);
+                _logger.LogWarning("Name fetch failed for barcode: {Barcode}. Reason: {Message}", item.Barcode, ex.Message);
             }
         }
 
 
         // BLOCCO IMMAGINE
-        bool userHasImage = false;
+        
         Image? image = null;
         // Normalizza: 0 equivale a "nessuna immagine"
         if (item.IdImage == 0 || item.IdImage == null)
@@ -142,8 +159,7 @@ public class ItemService : IItemService
                 // immagine specificata non esiste, pulisce i campi e avvisa
                 item.IdImage = null;
                 item.ImageName = null;
-                userHasImage = false;
-                _logger.LogInformation("Immagine con id {item.IdImage} non trovata, item aggiunto senza immagine", item.IdImage);
+                _logger.LogWarning("Image with ID {IdImage} not found in DB, item will be created without image", item.IdImage);
             }
             // se l'utente ha caricato un immagine valida, image la conterrà
         }
@@ -162,9 +178,10 @@ public class ItemService : IItemService
 
         //prova a fare override
 
-        // se esiste il bacode e l'immagine dell'utente è null oppure è possibile fare override, e ha una categoriaprova a fetchare
+        // se esiste il bacILogger<UsersController> loggerode e l'immagine dell'utente è null oppure è possibile fare override, e ha una categoriaprova a fetchare
         if(tentaFetchImmagine)
         {
+            _logger.LogInformation("Attempting image fetch for barcode: {Barcode}", item.Barcode);
             // vede se è possibile fetchare lì'immagine da provider esterni 
             int? fetchedImageId = null;
                 try
@@ -175,7 +192,7 @@ public class ItemService : IItemService
                     itemName: item.ItemName);
                 } catch (Exception ex)
                 {
-                    _logger.LogInformation("Fetch immagine fallito: {ex.Message}", ex.Message);
+                    _logger.LogWarning("Image fetch failed for barcode: {Barcode}. Reason: {Message}", item.Barcode, ex.Message);
                     // image rimane quella dell'utente, se c'era
                 }
 
@@ -184,10 +201,15 @@ public class ItemService : IItemService
                 if (fetchedImageId != null)
                 {
                     // trovo l'immagine scaricata e la prendo
-                    _logger.LogInformation("Fetch immagine avvenuto");
+                    _logger.LogInformation("Image fetched successfully with ID: {FetchedImageId}", fetchedImageId);
                     image = await _context.Images.FindAsync(fetchedImageId);
                     // Se c'era già un'immagine manuale il plugin la sovrascrive,
                 }
+                else
+                {
+                    _logger.LogInformation("Image fetch returned no result for barcode: {Barcode}", item.Barcode);
+                }
+
                 // Se fetchedImageId è null e l'utente aveva messo un'immagine manuale,
                 // non si tocca nulla — item.IdImage è già valorizzato correttamente
         }
@@ -198,10 +220,12 @@ public class ItemService : IItemService
             image.ItemsCount++;
             item.ImageName = image.FileName;   
             item.IdImage = image.IdImage;
+            _logger.LogInformation("Image assigned to item: ID {IdImage}, FileName {FileName}", image.IdImage, image.FileName);
         }
         else
         {
             // non è stata caricata alcuna immagine valita, e non è stato possibile trovare un immaine dal provider
+            _logger.LogInformation("No image assigned to item");
             item.ImageName=null;
             item.IdImage = null;
         }
@@ -223,6 +247,7 @@ public class ItemService : IItemService
 
         if (tentaFetchDescrizione)
         {
+            _logger.LogInformation("Attempting description fetch for barcode: {Barcode}", item.Barcode);
             try
             {
                 string? fetchedDescription = await _metadataService.FetchDescriptionAsync(
@@ -230,14 +255,19 @@ public class ItemService : IItemService
                     idCategory: item.IdCategory);
 
                 if (!string.IsNullOrWhiteSpace(fetchedDescription)) {
-                    _logger.LogInformation("Fetch descrizione avvenuto");
+                    _logger.LogInformation("Description fetched successfully for barcode: {Barcode}", item.Barcode);
                     item.Description = fetchedDescription;
                 }
+                else
+                {
+                    _logger.LogInformation("Description fetch returned no result for barcode: {Barcode}", item.Barcode);
+                }
+
                 // Se null e l'utente aveva una descrizione, rimane invariata
             }
             catch (Exception ex)
             {
-                _logger.LogInformation("Fetch descrizione fallito: {ex.Message}", ex.Message);
+                _logger.LogWarning("Description fetch failed for barcode: {Barcode}. Reason: {Message}", item.Barcode, ex.Message);
             }
         }
 
@@ -246,36 +276,53 @@ public class ItemService : IItemService
         _context.Items.Add(item);
         await _context.SaveChangesAsync();
 
+        _logger.LogInformation("Item created successfully with ID: {IdItem}, Name: {ItemName}", item.IdItem, item.ItemName);
         return item;
     }
 
     // Elimina un oggetto dal DB tramite il suo ID
     public async Task DeleteItemAsync(int id)
     {
+        _logger.LogInformation("Deleting item with ID: {Id}", id);
+
         var item = await _context.Items.FindAsync(id);
         if (item == null)
+        {
+            _logger.LogWarning("Item with ID {Id} not found", id);
             throw new KeyNotFoundException($"Item con id {id} non trovato");
+        }
 
         var image = await _context.Images.FindAsync(item.IdImage);
         if (image != null)
         {
             image.ItemsCount--;
-            // image.LastModified = DateTime.Now;
+            _logger.LogInformation("Decremented ItemsCount for image ID {IdImage}, new count: {ItemsCount}", image.IdImage, image.ItemsCount);
         }
 
         _context.Items.Remove(item);
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Item with ID {Id} deleted successfully", id);
     }
 
     // Aggiorna un oggetto esistente nel DB
     public async Task UpdateItemAsync(int id, Item updatedItem)
     {
+        _logger.LogInformation("Updating item with ID: {Id}", id);
+
         if (id != updatedItem.IdItem)
+        {
+            _logger.LogWarning("ID mismatch: route ID {Id} does not match body ID {BodyId}", id, updatedItem.IdItem);
             throw new ArgumentException("Id mismatch");
+        }
 
         var item = await _context.Items.FindAsync(id);
         if (item == null)
-            throw new KeyNotFoundException($"Item con id {id} non trovato");
+        {
+            _logger.LogWarning("Item with ID {Id} not found", id);
+            throw new KeyNotFoundException($"Item wit id {id} not founf");
+        }
+
 
         item.ItemName = updatedItem.ItemName;
         item.Description = updatedItem.Description;
@@ -287,6 +334,8 @@ public class ItemService : IItemService
         // se il vecchio e nuovo item sono senza immagine, "pulisce" i campi immagine e non fa nulla
         if ((item.IdImage != updatedItem.IdImage) && updatedItem.IdImage != null)
         {
+            _logger.LogInformation("Image changed for item ID {Id}: {OldImageId} -> {NewImageId}", id, item.IdImage, updatedItem.IdImage);
+
             var newImage = await _context.Images.FindAsync(updatedItem.IdImage);
             if (newImage != null)
             {
@@ -295,22 +344,32 @@ public class ItemService : IItemService
                 {
                     var oldImage = await _context.Images.FindAsync(item.IdImage);
                     if (oldImage != null)
+                    {
                         oldImage.ItemsCount--;
+                        _logger.LogInformation("Decremented ItemsCount for old image ID {IdImage}, new count: {ItemsCount}", oldImage.IdImage, oldImage.ItemsCount);
+                    }
+
                 }
 
                 // aumenta contatore nuova immagine
                 newImage.ItemsCount++;
                 item.ImageName = newImage.FileName;
                 item.IdImage = updatedItem.IdImage;
+                _logger.LogInformation("Incremented ItemsCount for new image ID {IdImage}, new count: {ItemsCount}", newImage.IdImage, newImage.ItemsCount);
             }
             else
             {
+                _logger.LogWarning("New image with ID {IdImage} not found, item updated without image", updatedItem.IdImage);
                 // immagine specificata non esiste, pulisce i campi e avvisa
                 if (item.IdImage != null)
                 {
                     var oldImage = await _context.Images.FindAsync(item.IdImage);
                     if (oldImage != null)
+                    {
                         oldImage.ItemsCount--;
+                        _logger.LogInformation("Decremented ItemsCount for old image ID {IdImage}, new count: {ItemsCount}", oldImage.IdImage, oldImage.ItemsCount);
+                    }
+
                 }
                 item.IdImage = null;
                 item.ImageName = null;
@@ -320,16 +379,23 @@ public class ItemService : IItemService
         else if (updatedItem.IdImage == null)
         // se il nuovo item è senza immagine, abbassa il contatore della vecchia immagine (se esiste) e pulisce i campi immagine senza fare query inutili
         {
+            _logger.LogInformation("Image removed from item ID {Id}", id);
+
             if (item.IdImage != null)
             {
                 var oldImage = await _context.Images.FindAsync(item.IdImage);
                 if (oldImage != null)
+                {
                     oldImage.ItemsCount--;
+                    _logger.LogInformation("Decremented ItemsCount for image ID {IdImage}, new count: {ItemsCount}", oldImage.IdImage, oldImage.ItemsCount);
+                }
+
             }
             item.IdImage = null;
             item.ImageName = null;
         }
 
         await _context.SaveChangesAsync();
+        _logger.LogInformation("Item with ID {Id} updated successfully", id);
     }
 }

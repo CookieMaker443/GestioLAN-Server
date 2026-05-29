@@ -140,7 +140,7 @@ public class UsersController : ControllerBase
         try
         {
             var url = await _userService.UploadProfileImageAsync(username, file);
-            return Ok(new { message = "Immagine caricata con successo", url });
+            return Ok(new { message = "Immage loaded succesfully: ", url });
         }
         catch (ArgumentException ex)
         {

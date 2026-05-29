@@ -34,7 +34,7 @@ public class CategoriesController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(nome))
         {
-            return BadRequest("Il nome della categoria non può essere vuoto.");
+            return BadRequest("Category name cannot be empty.");
         }
 
         try
@@ -72,7 +72,7 @@ public class CategoriesController : ControllerBase
         }
         catch (KeyNotFoundException)
         {
-            return NotFound($"Categoria con ID {id} non trovata.");
+            return NotFound($"Category with ID {id} not found.");
         }
         catch (Exception ex)
         {

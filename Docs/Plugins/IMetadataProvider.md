@@ -47,6 +47,12 @@ public interface IMetadataProvider
     // searchKey Il codice a barre (EAN), seriale hardware o SKU del componente
     //Un oggetto ProviderImageResult contenente lo stream o null se non trovato
     Task<ProviderImageResult?> DownloadImageAsync(string searchKey);
+    
+    // Riceve il nome piu formale dell item 
+    Task<string> GetCorrectNameAsync(string searchKey);
+
+    // Riceve una breve descrizione deii item
+    Task<string> GetCorrectDescriptionAsync(string sarchKey);
 }
 
 /// Modello di ritorno standardizzato per incapsulare i dati binari dell'immagine scaricata.
@@ -72,11 +78,22 @@ public class ProviderImageResult
 * **Perché esiste:** Permette al backend di mappare i plugin dinamicamente. Quando il `MetadataService` estrae una categoria dal database, legge il campo stringa `AssociatedProviderName`. Tramite questa proprietà, seleziona in memoria il plugin corretto senza dover conoscere a priori la classe concreta o il file `.dll` originale.
 * **Vantaggio collaterale:** Fornisce un'etichetta parlante per i file di log di Serilog (es. `[Plugin Loader] Caricato con successo: OpenFoodFacts`).
 
-### 2. Metodo `DownloadImageAsync`
+### 2. Metodi 
 
+`DownloadImageAsync`
 * **Cosa fa:** Accetta una stringa (il codice di ricerca) ed esegue una chiamata di rete non bloccante verso l'endpoint esterno.
 * **Perché usa `Task`:** Il recupero dei dati avviene via Internet. L'uso della programmazione asincrona (`async/await`) è vitale per liberare i thread del server web durante l'attesa della risposta I/O della rete, garantendo che l'API rimanga reattiva.
 * **Perché restituisce `null` anziché lanciare un'eccezione:** Se un codice a barre non è presente nei server di OpenFoodFacts, non si tratta di un errore software (anomalia di codice), ma di un esito operativo plausibile. Restituire `null` permette all'applicazione principale di procedere salvando l'oggetto nell'inventario semplicemente senza immagine.
+
+` GetCorrectNameAsync`
+* **Cosa fa:** Prende la searchkey e prova a oottere il nome piu professionale:
+```Example
+mms -> M&M's
+nutella -> Nutella
+arduiiino -> Arduino Uno Q
+```
+
+`GetCorrectDescriptionAsync` si comporta alla stessa maniera di getNamema per la descrizione
 
 ### 3. Classe `ProviderImageResult`
 
